@@ -26,7 +26,33 @@ from algorithm2 import *
 model = VAE(784,400,20)
 load_model()
 
+T = 10
 dt = 1 / T
 
-def main3():
+def main3(z0, u0):
+	x = []
+	z = []
+	u = []
+	z.append(z0)
+	u.append(u0)
+	x.append(model.decode(z0))
+
+	for i in range(0,T):
+		xi = model.decode(z[len(z) - 1])
+		ui = u[len(u) - 1]
+		xiplus1 = xi + dt * ui
+		ziplus1 = model.encode(xiplus1)
+		xiplus1 = model.decode(ziplus1)
+		Jg = find_jacobian_1(ziplus1)
+		u, sigma, vh = compute_SVD(Jg)
+		uiplus1 = np.dot(u.transpose(), u, ui)
+		uiplus1 = (find_mod(ui) / find_mod(uiplus1)) * uiplus1
+
+		u.append(uiplus1)
+		z.append(ziplus1)
+		x.append(xiplus1)
+
+	return (z[len(z) - 1])
+
+
 
