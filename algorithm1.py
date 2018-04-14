@@ -1,7 +1,5 @@
 # Algorithm 1 : Geodesic Path
 
-# commented main1
-
 import torch
 import torchvision
 from torch import nn
@@ -141,8 +139,8 @@ def save_model(model):
 
 def linear_interpolation(z0, zt):
     # z0 and zt in FloatTensor
-    z0n = z0
-    ztn = zt
+    z0n = z0 
+    ztn = zt.data
     z_middle = np.zeros(z0n.shape)
     for i in range(z0n.shape[0]):
         z_middle[i] = random.uniform(min(z0n[i], ztn[i]), max(z0n[i], ztn[i]))
@@ -174,7 +172,6 @@ def find_jacobian_1(model, z1): #Jg
 		jacobian[j,:] = z.grad.data
 		z.grad.data.zero_()
 	return jacobian
-
 
 T = 10
 epsilon = 5
@@ -232,29 +229,28 @@ def make_image(z,name):
     plt.imshow(img, cmap = 'gray', interpolation = 'nearest')
     plt.savefig('./'+name+'.jpg')
 
-# def main1(model,z0,zt):
-#     step_size = 0.1
-#     z0 = z0.data
-#     z_collection.append(z0)
+def main1(model,z0,zt):
+    step_size = 0.1
+    z0 = z0.data # 20 size FloatTensor
+    z_collection.append(z0)
     
-#     for i in range(T-2):
-#         w = linear_interpolation(z0,zt)
-#         z_collection.append(w)
-#     zt = zt.data
-#     z_collection.append(zt)
-#     j=0
-#     print("hello")
-#     print(sum_energy_1(model))
-#     while (sum_energy_1(model) > epsilon):
-#     	print(sum_energy_1(model))
-#     	for i in range(1,T-1):
-#         	etta_i = find_etta_i(model,z_collection[i-1], z_collection[i], z_collection[i+1])
-#         	e1 = step_size*etta_i
-#         	z_collection[i] = z_collection[i].view(20,1)
-#         	z_collection[i] = z_collection[i] - e1
-#     for p in range(4):
-#     	make_image(z=z_collection[p].view(20),name=str(p))
-#     return z_collection
+    for i in range(T-2):
+        w = linear_interpolation(z0,zt)
+        z_collection.append(w)
+    zt = zt.data
+    z_collection.append(zt)
+    j=0
+    print(sum_energy_1(model))
+    while (sum_energy_1(model) > epsilon):
+    	print(sum_energy_1(model))
+    	for i in range(1,T-1):
+        	etta_i = find_etta_i(model, z_collection[i-1], z_collection[i], z_collection[i+1])
+        	e1 = step_size*etta_i
+        	z_collection[i] = z_collection[i].view(20,1)
+        	z_collection[i] = z_collection[i] - e1
+    for p in range(4):
+    	make_image(z=z_collection[p].view(20),name=str(p))
+    return z_collection
 
 #############################################################################
 # TRAINING A NEW MODEL
@@ -271,7 +267,7 @@ z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 zt = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 zt1 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 
-#main1(model=model,z0=z0, zt=zt)
+main1(model=model,z0=z0, zt=zt)
 
 
 
