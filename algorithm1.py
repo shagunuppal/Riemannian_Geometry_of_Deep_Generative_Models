@@ -267,8 +267,7 @@ z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 zt = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 zt1 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 
-main1(model=model,z0=z0, zt=zt)
-
+#main1(model=model,z0=z0, zt=zt)
 
 
 

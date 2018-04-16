@@ -19,11 +19,27 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import sys, os
 import math
+from numpy.linalg import inv
 
 from algorithm1 import *
 
 model = VAE(784,400,20)
 load_model()
+
+
+def find_u0(z0):
+	sigma = np.identity(20)
+	mu = np.zeros([20])
+	z = z0
+	z_ = z.numpy()
+	a = np.matmul(np.matmul((z_ - mu).transpose(), inv(sigma), (z_ - mu)))
+	print (a)
+	#latent_space_np = (1/math.sqrt(2 * math.pi * np.linalg.det(sigma) )) * math.exp(- np.dot( (z_ - mu).transpose(), sigma, (z_ - mu) ))
+	latent_space_ft = torch.from_numpy(a)
+	latent_space = Variable(latent_space_ft)
+	latent_space.backward()
+	gradient = z.grad
+	return gradient
 
 def compute_SVD(matrix):
 	u, sigma, vh = np.linalg.svd(a, full_matrices=True)
@@ -47,6 +63,8 @@ def main2(z_collection, v0):
 	vt = np.matmul(vt_, ut)
 	return vts
 
+zt = torch.FloatTensor(20).normal_()
+print (find_u0(zt))
 
 
 
