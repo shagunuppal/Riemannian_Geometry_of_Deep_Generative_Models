@@ -35,11 +35,15 @@ def find_u0(z0):
 	a = np.matmul(np.matmul((z_ - mu).transpose(), inv(sigma)), (z_ - mu))
 	#latent_space_np = (1/math.sqrt(2 * math.pi * np.linalg.det(sigma) )) * math.exp(- np.dot( (z_ - mu).transpose(), sigma, (z_ - mu) ))
 	latent_space_np = np.array([a])
-	latent_space_ft = torch.FloatTensor(a)
+	#print ("hello : ",latent_space_np)	
+	latent_space_ft = torch.from_numpy(latent_space_np)
+	#print ("FloatTensor ",latent_space_ft)
 	latent_space = Variable(latent_space_ft)
+	#print ("Variable ",latent_space)
 	latent_space.backward()
-	gradient = z.grad
-	return gradient
+	# gradient = z.grad
+	# print (gradient)
+	# return gradient
 
 def compute_SVD(matrix):
 	u, sigma, vh = np.linalg.svd(a, full_matrices=True)
@@ -64,7 +68,7 @@ def main2(z_collection, v0):
 	return vts
 
 zt = torch.FloatTensor(20).normal_()
-print (find_u0(zt))
+(find_u0(zt))
 
 
 
