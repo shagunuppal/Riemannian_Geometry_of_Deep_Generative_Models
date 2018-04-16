@@ -32,10 +32,10 @@ def find_u0(z0):
 	mu = np.zeros([20])
 	z = z0
 	z_ = z.numpy()
-	a = np.matmul(np.matmul((z_ - mu).transpose(), inv(sigma), (z_ - mu)))
-	print (a)
+	a = np.matmul(np.matmul((z_ - mu).transpose(), inv(sigma)), (z_ - mu))
 	#latent_space_np = (1/math.sqrt(2 * math.pi * np.linalg.det(sigma) )) * math.exp(- np.dot( (z_ - mu).transpose(), sigma, (z_ - mu) ))
-	latent_space_ft = torch.from_numpy(a)
+	latent_space_np = np.array([a])
+	latent_space_ft = torch.FloatTensor(a)
 	latent_space = Variable(latent_space_ft)
 	latent_space.backward()
 	gradient = z.grad
