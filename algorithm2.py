@@ -27,48 +27,54 @@ model = VAE(784,400,20)
 load_model()
 
 
-def find_u0(z0):
-	sigma = np.identity(20)
-	mu = np.zeros([20])
-	z = z0
-	z_ = z.numpy()
-	a = np.matmul(np.matmul((z_ - mu).transpose(), inv(sigma)), (z_ - mu))
-	#latent_space_np = (1/math.sqrt(2 * math.pi * np.linalg.det(sigma) )) * math.exp(- np.dot( (z_ - mu).transpose(), sigma, (z_ - mu) ))
-	latent_space_np = np.array([a])
-	#print ("hello : ",latent_space_np)	
-	latent_space_ft = torch.from_numpy(latent_space_np)
-	#print ("FloatTensor ",latent_space_ft)
-	latent_space = Variable(latent_space_ft)
-	#print ("Variable ",latent_space)
+def find_v0(z0):
+	z = Variable(z0.view(20,1),requires_grad=True)
+	sigma = torch.FloatTensor(np.identity(20))
+	mu = torch.zeros(20,1)
+	sigma_np = sigma.numpy()
+	det = np.linalg.det(sigma_np)
+	c = 1 / (math.sqrt(2 * math.pi * det)) 
+	a = torch.exp(torch.mm(torch.t(z),z))
+	latent_space = (a * c)
 	latent_space.backward()
-	# gradient = z.grad
-	# print (gradient)
-	# return gradient
+	k = z.grad.data
+	return k	
 
 def compute_SVD(matrix):
-	u, sigma, vh = np.linalg.svd(a, full_matrices=True)
+	u, sigma, vh = np.linalg.svd(matrix, full_matrices = True)
 	return (u, sigma, vh)
 
-def main2(z_collection, v0):
+def main2(z_collection):
 	u = []
-	u0 = torch.matmul(find_jacobian_1(model, z_collection[1]), v0)
+	v0 = find_v0(z_collection[0])
+	print(v0)
+	#print(z_collection[0])
+	u0 = torch.matmul(find_jacobian_1(model, Variable(z_collection[0], requires_grad=True)), v0)
 	u.append(u0)
 	T  = len(z_collection) - 1
 	
 	for i in range (T):
-		xi = model.decode(z_collection[i])
-		u, sigma, vh = compute_SVD(xi)
-		ui = np.dot(u.transpose(), u, u[len(u) - 1])
+		xi = model.decode(Variable(z_collection[i],requires_grad=True))
+		x1 = find_jacobian_1(model, Variable(z_collection[i+1],requires_grad=True))
+		U, sigma, vh = compute_SVD(x1)
+		U = torch.FloatTensor(U)
+		ui = torch.mm(torch.mm(U.t(), U),u[len(u) - 1].view(784,1))
 		ui = (find_mod(u[len(u) - 1]) / find_mod(ui)) * ui
 		u.append(ui)
 
 	ut = u[len(u) - 1]
-	vt_ = find_jacobian(model.decode(z_collection[len(z_collection) - 1]))
-	vt = np.matmul(vt_, ut)
-	return vts
+	vt_ = find_jacobian(model, Variable(z_collection[len(z_collection) - 1],requires_grad=True))
+	vt = torch.mm(vt_, ut)
+	make_image(vt.view(20),"algo2_final")
+	make_image(v0.view(20),"algo2_initial")
+	return vt
 
-zt = torch.FloatTensor(20).normal_()
-(find_u0(zt))
+zt = torch.FloatTensor(20).normal_().view(20,1)
+z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
+z1 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
+
+z_ = main1(model,z0,z1)
+main2(z_collection=z_)
 
 
 

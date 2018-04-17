@@ -173,8 +173,8 @@ def find_jacobian_1(model, z1): #Jg
 		z.grad.data.zero_()
 	return jacobian
 
-T = 10
-epsilon = 5
+T = 4
+epsilon = 9
 z_collection = []
 delta_e = torch.FloatTensor(20,784).zero_()
 
@@ -248,8 +248,8 @@ def main1(model,z0,zt):
         	e1 = step_size*etta_i
         	z_collection[i] = z_collection[i].view(20,1)
         	z_collection[i] = z_collection[i] - e1
-    for p in range(4):
-    	make_image(z=z_collection[p].view(20),name=str(p))
+    #for p in range(4):
+    #	make_image(z=z_collection[p].view(20),name=str(p))
     return z_collection
 
 #############################################################################
