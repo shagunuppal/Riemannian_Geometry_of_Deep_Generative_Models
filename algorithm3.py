@@ -39,8 +39,10 @@ def initial_velocity(z0):
 	latent_space = (a * c)
 	latent_space.backward()
 	k = z.grad.data.view(20)
-	o = find_jacobian_1(model,Variable(k, requires_grad = True))
-	print(o)
+	k_ = Variable(k, requires_grad = True)
+	print("correct :    ",k_)
+	o = find_jacobian_1(model,k_)
+	print("wrong :   ",o)
 	k1 = torch.mm(o,k.view(20,1))
 	return k1	
 
@@ -79,5 +81,4 @@ def main3(z0, u0):
 
 z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 u0 = initial_velocity(z0)
-print("1",u0)
 main3(z0,u0)

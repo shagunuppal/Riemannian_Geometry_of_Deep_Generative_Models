@@ -47,8 +47,8 @@ def compute_SVD(matrix):
 def main2(z_collection):
 	u = []
 	v0 = find_v0(z_collection[0])
-	print(v0)
-	#print(z_collection[0])
+	#print(v0)
+	#print("aaaaaaa",z_collection[0])
 	u0 = torch.matmul(find_jacobian_1(model, Variable(z_collection[0], requires_grad=True)), v0)
 	u.append(u0)
 	T  = len(z_collection) - 1
