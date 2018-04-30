@@ -162,7 +162,7 @@ def find_jacobian(model, z1): #Jh
 
 def find_jacobian_1(model, z1): #Jg
 	z = z1
-	print(z.size())
+	#print(z.size())
 	dec = model.decode(z)
 	jacobian = torch.FloatTensor(784,20).zero_()
 	for j in range(784):
@@ -222,12 +222,17 @@ def sum_energy_1(model):
 	return find_mod(delta_e)
 
 def make_image(z,name):
-    print(z)
+    #print(z)
     x = model.decode(Variable(z))
     x = x.view(28,28)
     img = x.data.numpy()
     plt.imshow(img, cmap = 'gray', interpolation = 'nearest')
-    plt.savefig('./'+name+'.jpg')
+    plt.savefig('./' + name + '.jpg')
+
+def make_image_1(x,name):
+    img = x.numpy().reshape(28,28)
+    plt.imshow(img, cmap = 'gray', interpolation = 'nearest')
+    plt.savefig('./' + name + '.jpg')
 
 def main1(model,z0,zt):
     step_size = 0.1
