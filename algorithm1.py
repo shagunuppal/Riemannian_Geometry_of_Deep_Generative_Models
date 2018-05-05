@@ -183,6 +183,7 @@ def find_energy(model,z0, z1, z2):
     a11 = find_jacobian_1(model,Variable(z1, requires_grad=True))
     a1 = torch.transpose(find_jacobian_1(model,Variable(z1, requires_grad=True)),0,1)
     a2 = ((model.decode(Variable(z2)) - 2*model.decode(Variable(z1))+model.decode(Variable(z0))).data).view(784,1)
+    print(1 / dt)
     e = -(1 / dt)*(torch.mm(a1,a2))
     return e
 
@@ -253,8 +254,8 @@ def main1(model,z0,zt):
         	e1 = step_size*etta_i
         	z_collection[i] = z_collection[i].view(20,1)
         	z_collection[i] = z_collection[i] - e1
-    #for p in range(4):
-    #	make_image(z=z_collection[p].view(20),name=str(p))
+    for p in range(T):
+    	make_image(z=z_collection[p].view(20),name=str(p))
     return z_collection
 
 #############################################################################
@@ -275,7 +276,7 @@ zt1 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 #main1(model=model,z0=z0, zt=zt)
 
 
-
+	
 
 		
 

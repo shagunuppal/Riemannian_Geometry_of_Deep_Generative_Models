@@ -26,7 +26,7 @@ model = VAE(784,400,20)
 load_model()
 
 T = 10
-dt = 1 / T
+dt = 1.0 / T
 
 def initial_velocity(z0):
 	z = Variable(z0.view(20,1).data,requires_grad=True)
@@ -34,12 +34,14 @@ def initial_velocity(z0):
 	mu = torch.zeros(20,1)
 	sigma_np = sigma.numpy()
 	det = np.linalg.det(sigma_np)
-	c = 1 / (math.sqrt(2 * math.pi * det)) 
-	a = torch.exp(torch.mm(torch.t(z),z))
+	c = 1 /((math.pow(2 * math.pi,1.0/10))*(math.sqrt(det))) 
+	a = torch.exp((-1.0/2)*torch.mm(torch.t(z),z))
 	latent_space = (a * c)
 	latent_space.backward()
 	k = z.grad.data.view(20)
+	print("k:",k)
 	k_ = Variable(k, requires_grad = True)
+	print("k_:",k_)
 	print("correct :    ",k_)
 	o = find_jacobian_1(model,k_)
 	print("wrong :   ",o)
@@ -78,7 +80,7 @@ def main3(z0, u0):
 	return (z[len(z) - 1])
 
 #zt = torch.FloatTensor(20).normal_().view(20,1)
-
 z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 u0 = initial_velocity(z0)
+#z_ = main1(model,z0,z1)
 main3(z0,u0)
