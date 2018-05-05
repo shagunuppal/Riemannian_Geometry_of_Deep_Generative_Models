@@ -25,7 +25,7 @@ from algorithm1 import *
 model = VAE(784,400,20)
 load_model()
 
-T = 12
+T = 1
 dt = 1.0 / T
 
 def initial_velocity(z0):
