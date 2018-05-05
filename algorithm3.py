@@ -25,7 +25,7 @@ from algorithm1 import *
 model = VAE(784,400,20)
 load_model()
 
-T = 10
+T = 12
 dt = 1.0 / T
 
 def initial_velocity(z0):
@@ -39,12 +39,12 @@ def initial_velocity(z0):
 	latent_space = (a * c)
 	latent_space.backward()
 	k = z.grad.data.view(20)
-	print("k:",k)
+	#print("k:",k)
 	k_ = Variable(k, requires_grad = True)
-	print("k_:",k_)
-	print("correct :    ",k_)
+	#print("k_:",k_)
+	#print("correct :    ",k_)
 	o = find_jacobian_1(model,k_)
-	print("wrong :   ",o)
+	#print("wrong :   ",o)
 	k1 = torch.mm(o,k.view(20,1))
 	return k1	
 
