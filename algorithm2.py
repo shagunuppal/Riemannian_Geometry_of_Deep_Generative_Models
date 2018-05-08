@@ -27,17 +27,18 @@ model = VAE(784,400,20)
 load_model()
 
 def find_v0(z0):
-	z = Variable(z0.view(20,1),requires_grad=True)
-	sigma = torch.FloatTensor(np.identity(20))
-	mu = torch.zeros(20,1)
-	sigma_np = sigma.numpy()
-	det = np.linalg.det(sigma_np)
-	c = 1.0 / ((math.pow(2*math.pi,10))*(math.sqrt(det))) 
-	a = torch.exp(torch.mm(torch.t(z),z))
-	latent_space = (a * c)
-	latent_space.backward()
-	k = z.grad.data
-	return k	
+	# z = Variable(z0.view(20,1),requires_grad=True)
+	# c = 1.0 / (math.pow(2*math.pi,10)) 
+	# a = torch.exp(-0.5*torch.mm(torch.t(z),z))
+	# latent_space = (a * c)
+	# latent_space.backward()
+	# k = z.grad.data
+	# return k	
+	x = model.decode(z0)
+	z1, z2 = model.encode(x)
+	#print(type(z1))
+	z1.backward()
+	return z0.grad.data
 
 def compute_SVD(matrix):
 	u, sigma, vh = torch.svd(matrix, some=False)
@@ -52,6 +53,7 @@ def make_sigma(sig):
 def main2(z_collection):
 	u = []
 	v0 = find_v0(z_collection[0])
+	print (v0)
 	u0 = torch.matmul(find_jacobian_1(model, Variable(z_collection[0], requires_grad=True)), v0)
 	u.append(u0)
 	T  = len(z_collection) - 1
@@ -69,10 +71,10 @@ def main2(z_collection):
 	ut = u[len(u) - 1]
 	vt_ = find_jacobian(model, Variable(z_collection[len(z_collection) - 1],requires_grad=True))
 	vt = torch.mm(vt_, ut)
-	#make_image(vt.view(20),"algo2_final_latentspace")
+	make_image(vt.view(20),"algo2_final_latentspace")
 	make_image((abs)(v0.view(20)),"algo2_initial_latentspace")
 	make_image(z_collection[0].view(20), "algo2_1")
-	#make_image(z_collection[len(z_collection)-1].view(20), "algo2_2")
+	make_image(z_collection[len(z_collection)-1].view(20), "algo2_2")
 	return vt
 
 zt = torch.FloatTensor(20).normal_().view(20,1)
