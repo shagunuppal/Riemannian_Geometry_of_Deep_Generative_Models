@@ -32,7 +32,7 @@ def find_v0(z0):
 	mu = torch.zeros(20,1)
 	sigma_np = sigma.numpy()
 	det = np.linalg.det(sigma_np)
-	c = 1.0 / (math.sqrt(2 * math.pi * det)) 
+	c = 1.0 / ((math.pow(2*math.pi,10))*(math.sqrt(det))) 
 	a = torch.exp(torch.mm(torch.t(z),z))
 	latent_space = (a * c)
 	latent_space.backward()
@@ -69,8 +69,6 @@ def main2(z_collection):
 	ut = u[len(u) - 1]
 	vt_ = find_jacobian(model, Variable(z_collection[len(z_collection) - 1],requires_grad=True))
 	vt = torch.mm(vt_, ut)
-	print(v0)
-	print(z_collection[0])
 	#make_image(vt.view(20),"algo2_final_latentspace")
 	make_image((abs)(v0.view(20)),"algo2_initial_latentspace")
 	make_image(z_collection[0].view(20), "algo2_1")

@@ -75,7 +75,6 @@ def main3(z0, u0):
 		sigma = make_sigma(sigma)
 		U, sigma, vh, jgg = reduction(U, sigma, vh, Jg)
 		uiplus1 = (torch.mm(torch.mm(U, U.t()),u[len(u) - 1])).view(784,1)
-		#ui = torch.mm(torch.mm(U, U.t()),u[len(u) - 1].view(784,1))
 		uiplus1 = (find_mod(u[len(u) - 1]) / find_mod(uiplus1)) * uiplus1
 		u.append(uiplus1)
 		z.append(ziplus1)

@@ -18,13 +18,10 @@ def PCA(U, sigma, vh, x1):
 		x11 = torch.mm(torch.mm(U, sigma), vh)
 		new1 = (abs(x1 - x11)) / ((abs)(x1))
 		new_  = torch.mean(new1)*100
-		#print(new_)
-		#print("yoyo_new:",j,new_.data)
 		j+=1
 		if(new_<y):
 			y = new_
 			x2 = x11
-	#print(x2.size())
 	return x2, U, sigma, vh
 
 def reduction(U, sigma, vh, x1):
@@ -37,10 +34,8 @@ def reduction(U, sigma, vh, x1):
 	for i in range(20):
 		z += sigma[i][i]
 		x = (1.0*(z*100))/y
-		#print(x)
 		if(x>=90):
 			index = i
-			#print(index)
 			break
 	if(index!=0):
 		U = U[:784,:index]

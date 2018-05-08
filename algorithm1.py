@@ -162,7 +162,6 @@ def find_jacobian(model, z1): #Jh
 
 def find_jacobian_1(model, z1): #Jg
 	z = z1
-	#print(z.size())
 	dec = model.decode(z)
 	jacobian = torch.FloatTensor(784,20).zero_()
 	for j in range(784):
@@ -173,7 +172,7 @@ def find_jacobian_1(model, z1): #Jg
 		z.grad.data.zero_()
 	return jacobian
 
-T = 6
+T = 3
 epsilon = 9
 z_collection = []
 delta_e = torch.FloatTensor(20,784).zero_()
@@ -223,10 +222,11 @@ def sum_energy_1(model):
 
 def make_image(z,name):
     #print(z)
+    z = abs(z)
     x = model.decode(Variable(z))
     x = x.view(28,28)
     img = x.data.numpy()
-    print(x)
+    #print(x)
     plt.imshow(img, cmap = 'gray', interpolation = 'nearest')
     plt.savefig('./' + name + '.jpg')
 
@@ -246,7 +246,7 @@ def main1(model,z0,zt):
     zt = zt.data
     z_collection.append(zt)
     j=0
-    print(sum_energy_1(model))
+    #print(sum_energy_1(model))
     while (sum_energy_1(model) > epsilon):
     	print(sum_energy_1(model))
     	for i in range(1,T-1):
