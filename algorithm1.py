@@ -172,13 +172,13 @@ def find_jacobian_1(model, z1): #Jg
 		z.grad.data.zero_()
 	return jacobian
 
-T = 6
-epsilon = 5
+T = 5
+dt = 1.0 / T
+epsilon = 7
 z_collection = []
 delta_e = torch.FloatTensor(20,784).zero_()
 
 def find_energy(model,z0, z1, z2):
-    dt = 1 / T
     a11 = find_jacobian_1(model,Variable(z1, requires_grad=True))
     a1 = torch.transpose(find_jacobian_1(model,Variable(z1, requires_grad=True)),0,1)
     a2 = ((model.decode(Variable(z2)) - 2*model.decode(Variable(z1))+model.decode(Variable(z0))).data).view(784,1)

@@ -29,9 +29,7 @@ load_model()
 def find_v0(z):
 	b = z[1]
 	a = z[0]
-	T = len(z_collection) - 1
-	dt = 1.0 / T
-	v0 = (b - a) / dt
+	v0 = (b - a) 
 	# v0 is 20 size float tensor 
 	return v0
 
