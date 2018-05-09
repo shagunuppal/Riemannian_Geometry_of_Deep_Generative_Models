@@ -26,19 +26,14 @@ from PCA import *
 model = VAE(784,400,20)
 load_model()
 
-def find_v0(z0):
-	# z = Variable(z0.view(20,1),requires_grad=True)
-	# c = 1.0 / (math.pow(2*math.pi,10)) 
-	# a = torch.exp(-0.5*torch.mm(torch.t(z),z))
-	# latent_space = (a * c)
-	# latent_space.backward()
-	# k = z.grad.data
-	# return k	
-	x = model.decode(z0)
-	z1, z2 = model.encode(x)
-	#print(type(z1))
-	z1.backward()
-	return z0.grad.data
+def find_v0(z):
+	b = z[1]
+	a = z[0]
+	T = len(z_collection) - 1
+	dt = 1.0 / T
+	v0 = (b - a) / dt
+	# v0 is 20 size float tensor 
+	return v0
 
 def compute_SVD(matrix):
 	u, sigma, vh = torch.svd(matrix, some=False)
@@ -52,8 +47,7 @@ def make_sigma(sig):
 
 def main2(z_collection):
 	u = []
-	v0 = find_v0(z_collection[0])
-	print (v0)
+	v0 = find_v0(z_collection)
 	u0 = torch.matmul(find_jacobian_1(model, Variable(z_collection[0], requires_grad=True)), v0)
 	u.append(u0)
 	T  = len(z_collection) - 1
@@ -65,7 +59,11 @@ def main2(z_collection):
 		sigma = make_sigma(sigma)
 		U, sigma, vh, xii = reduction(U, sigma, vh, x1)
 		ui = torch.mm(torch.mm(U, U.t()),u[len(u) - 1].view(784,1))
-		ui = (find_mod(u[len(u) - 1]) / find_mod(ui)) * ui
+		#print ("1", find_mod(ui))
+		#print ("2", find_mod(u[len(u) - 1]))
+		#print ("1",ui.size())
+		#print ("2",u[len(u)-1].size())
+		ui = (find_mod( u[len(u) - 1].view(784,1) ) / find_mod(ui)) * ui
 		u.append(ui)
 
 	ut = u[len(u) - 1]
@@ -73,8 +71,8 @@ def main2(z_collection):
 	vt = torch.mm(vt_, ut)
 	make_image(vt.view(20),"algo2_final_latentspace")
 	make_image((abs)(v0.view(20)),"algo2_initial_latentspace")
-	make_image(z_collection[0].view(20), "algo2_1")
-	make_image(z_collection[len(z_collection)-1].view(20), "algo2_2")
+	make_image(z_collection[0].view(20), "algo2_initial")
+	make_image(z_collection[len(z_collection)-1].view(20), "algo2_final")
 	return vt
 
 zt = torch.FloatTensor(20).normal_().view(20,1)

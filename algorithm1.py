@@ -172,8 +172,8 @@ def find_jacobian_1(model, z1): #Jg
 		z.grad.data.zero_()
 	return jacobian
 
-T = 4
-epsilon = 9
+T = 6
+epsilon = 5
 z_collection = []
 delta_e = torch.FloatTensor(20,784).zero_()
 
@@ -200,6 +200,7 @@ def find_etta_i(model,z0,z1,z2):
 	return e
 
 def find_mod(x):
+    # x is float tensor
 	p = 0
 	x1 = x.numpy()
 	for i in range(20):
