@@ -174,7 +174,7 @@ def find_jacobian_1(model, z1): #Jg
 
 T = 5
 dt = 1.0 / T
-epsilon = 7
+epsilon = 8
 z_collection = []
 delta_e = torch.FloatTensor(20,784).zero_()
 

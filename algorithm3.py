@@ -30,19 +30,11 @@ T = 20
 dt = 1.0 / T
 
 def initial_velocity(z0):
-	z = Variable(z0.view(20,1).data,requires_grad=True)
-	sigma = torch.FloatTensor(np.identity(20))
-	mu = torch.zeros(20,1)
-	sigma_np = sigma.numpy()
-	det = np.linalg.det(sigma_np)
-	c = 1 /((math.pow(2 * math.pi, 10))*(math.sqrt(det))) 
-	a = torch.exp((-1.0/2)*torch.mm(torch.t(z),z))
-	latent_space = (a * c)
-	latent_space.backward()
-	k = z.grad.data.view(20)
-	k_ = Variable(k, requires_grad = True)
-	o = find_jacobian_1(model,k_)
-	k1 = torch.mm(o,k.view(20,1))
+	b = z0[1]
+	a = z0[0]
+	v0 = ((b - a)*1.0) / dt
+	o = find_jacobian_1(model,Variable(z0[0], requires_grad=True))
+	k1 = torch.matmul(o,v0)
 	return k1	
 
 def make_sigma(sig):
@@ -52,8 +44,19 @@ def make_sigma(sig):
 	return sigma
 
 def compute_SVD(matrix):
-	u, sigma, vh = torch.svd(matrix, some=False)
+	u, sigma, vh = np.linalg.svd(matrix, full_matrices=True)
+	#print(sigma.shape)
 	return (u, sigma, vh)
+
+def mod(x):
+	x1 = x.numpy()
+	p = 0
+	for i in range(784):
+		q = x1[i]
+		p = p + q*q
+		#print("mod", p)
+		p = math.sqrt(p)
+	return p 
 
 def main3(z0, u0):
 	x = []
@@ -72,10 +75,13 @@ def main3(z0, u0):
 		xiplus1 = model.decode(ziplus1)
 		Jg = find_jacobian_1(model, ziplus1)
 		U, sigma, vh = compute_SVD(Jg)
+		U = torch.FloatTensor(U)
+		sigma = torch.FloatTensor(sigma)
+		vh = torch.FloatTensor(vh)
 		sigma = make_sigma(sigma)
 		U, sigma, vh, jgg = reduction(U, sigma, vh, Jg)
-		uiplus1 = (torch.mm(torch.mm(U, U.t()),u[len(u) - 1])).view(784,1)
-		uiplus1 = (find_mod(u[len(u) - 1]) / find_mod(uiplus1)) * uiplus1
+		uiplus1 = (torch.matmul(torch.matmul(U, U.t()),u[len(u) - 1])).view(784,1)
+		uiplus1 = (mod(u[len(u) - 1]) / mod(uiplus1)) * uiplus1
 		u.append(uiplus1)
 		z.append(ziplus1)
 		x.append(xiplus1)
@@ -84,5 +90,7 @@ def main3(z0, u0):
 	return (z[len(z) - 1])
 
 z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
-u0 = initial_velocity(z0)
+z1 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
+z_ = main1(model,z0,z1)
+u0 = initial_velocity(z_)
 main3(z0,u0)
