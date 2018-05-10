@@ -20,6 +20,18 @@ import matplotlib.pyplot as plt
 import sys, os
 import math
 
+import torch._utils
+try:
+    torch._utils._rebuild_tensor_v2
+except AttributeError:
+    def _rebuild_tensor_v2(storage, storage_offset, size, stride, requires_grad, backward_hooks):
+        tensor = torch._utils._rebuild_tensor(storage, storage_offset, size, stride)
+        tensor.requires_grad = requires_grad
+        tensor._backward_hooks = backward_hooks
+        return tensor
+    torch._utils._rebuild_tensor_v2 = _rebuild_tensor_v2
+
+
 num_epochs = 100
 batch_size = 128
 learning_rate = 1e-3
@@ -135,11 +147,11 @@ def train(batchsize):
     return model
 
 def load_model():
-	model.load_state_dict(torch.load('./vae.pth'))
+	model.load_state_dict(torch.load('./vae2.pth'))
 	return model
 
 def save_model(model):
-	torch.save(model.state_dict(), './vae.pth')
+	torch.save(model.state_dict(), './vae2.pth')
 
 def linear_interpolation(z0, zt):
     # z0 and zt in FloatTensor
