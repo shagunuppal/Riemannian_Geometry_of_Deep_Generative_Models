@@ -34,9 +34,7 @@ def find_v0(z):
 	return v0
 
 def compute_SVD(matrix):
-	#u, sigma, vh = torch.svd(matrix, some=False)
 	u, sigma, vh = np.linalg.svd(matrix, full_matrices=True)
-	#print(sigma.shape)
 	return (u, sigma, vh)
 
 def make_sigma(sig):
@@ -64,6 +62,7 @@ def main2(z_collection):
 	for i in range (T):
 		xi = model.decode(Variable(z_collection[i],requires_grad=True))
 		x1 = find_jacobian_1(model, Variable(z_collection[i+1],requires_grad=True))
+		#print (Variable(z_collection[i+1],requires_grad=True).size())
 		U, sigma, vh = compute_SVD(x1)
 		U = torch.FloatTensor(U)
 		sigma = torch.FloatTensor(sigma)
@@ -72,14 +71,14 @@ def main2(z_collection):
 		U, sigma, vh, xii = reduction(U, sigma, vh, x1)
 		ui = torch.matmul(torch.matmul(U, U.t()),u[len(u) - 1].view(784,1))
 		ui = (mod( u[len(u) - 1].view(784,1) ) / mod(ui)) * ui
-		print(ui)
+		#print(ui)
 		u.append(ui)
 
 	ut = u[len(u) - 1]
 	vt_ = find_jacobian(model, Variable(z_collection[len(z_collection) - 1],requires_grad=True))
 	vt = torch.mm(vt_, ut)
-	make_image(vt.view(20),"algo2_final_tangentspace")
-	make_image(v0.view(20),"algo2_initial_tangentspace")
+	# make_image(vt.view(20),"algo2_final_tangentspace")
+	# make_image(v0.view(20),"algo2_initial_tangentspace")
 	make_image(z_collection[0].view(20), "algo2_initial")
 	make_image(z_collection[len(z_collection)-1].view(20), "algo2_final")
 	return vt

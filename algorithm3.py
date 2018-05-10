@@ -51,7 +51,7 @@ def compute_SVD(matrix):
 def mod(x):
 	x1 = x.numpy()
 	p = 0
-	print(x1.shape)
+	#print(x1.shape)
 	for i in range(784):
 		q = x1[i]
 		p = p + q*q
