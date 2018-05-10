@@ -172,9 +172,9 @@ def find_jacobian_1(model, z1): #Jg
 		z.grad.data.zero_()
 	return jacobian
 
-T = 20
+T = 4
 dt = 1.0 / T
-epsilon = 8
+epsilon = 6
 z_collection = []
 delta_e = torch.FloatTensor(20,784).zero_()
 

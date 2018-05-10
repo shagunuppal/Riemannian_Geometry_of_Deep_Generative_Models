@@ -70,7 +70,6 @@ def main2(z_collection):
 		vh = torch.FloatTensor(vh)
 		sigma = make_sigma(sigma)
 		U, sigma, vh, xii = reduction(U, sigma, vh, x1)
-		print(U.size())
 		ui = torch.matmul(torch.matmul(U, U.t()),u[len(u) - 1].view(784,1))
 		ui = (mod( u[len(u) - 1].view(784,1) ) / mod(ui)) * ui
 		print(ui)
