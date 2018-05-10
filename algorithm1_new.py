@@ -262,13 +262,13 @@ def main1(model,z0,zt):
 
 #############################################################################
 # TRAINING A NEW MODEL
-train(batchsize = batch_size)
-save_model(model)
+# train(batchsize = batch_size)
+# save_model(model)
 #############################################################################
 
 #############################################################################
 # LOADING EXISTING MODEL
-#load_model()
+load_model()
 #############################################################################
 
 z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)

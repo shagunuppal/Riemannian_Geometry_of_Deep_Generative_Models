@@ -30,6 +30,7 @@ def find_v0(z):
 	b = z[1]
 	a = z[0]
 	v0 = ((b - a)*1.0) / dt
+	print (v0.size())
 	# v0 is 20 size float tensor 
 	return v0
 
