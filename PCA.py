@@ -16,7 +16,7 @@ def PCA(U, sigma, vh, x1):
 		sigma = sigma[:784-i,:20-i]
 		vh = vh[:20-i,:]
 		x11 = torch.mm(torch.mm(U, sigma), vh)
-		new1 = (abs(x1 - x11)) / ((abs)(x1))
+		new1 = (abs(x1 - x11)) / (abs(x1))
 		new_  = torch.mean(new1)*100
 		j+=1
 		if(new_<y):

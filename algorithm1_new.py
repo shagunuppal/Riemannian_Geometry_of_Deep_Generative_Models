@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import sys, os
 import math
 
-num_epochs = 2
+num_epochs = 100
 batch_size = 128
 learning_rate = 1e-3
 
@@ -38,18 +38,21 @@ def to_img(x):
     return x
 
 class VAE(nn.Module):
-    def __init__(self,n1,n2,latent_dimension):
+    def __init__(self,n1,n2,n3,latent_dimension):
         super(VAE, self).__init__()
 
         self.fc1 = nn.Linear(n1, n2)
-        self.fc21 = nn.Linear(n2, latent_dimension)
-        self.fc22 = nn.Linear(n2, latent_dimension)
-        self.fc3 = nn.Linear(latent_dimension, n2)
+        self.fc11 = nn.Linear(n2,n3)
+        self.fc21 = nn.Linear(n3, latent_dimension)
+        self.fc22 = nn.Linear(n3, latent_dimension)
+        self.fc3 = nn.Linear(latent_dimension, n3)
+        self.fc33 = nn.Linear(n3,n2)
         self.fc4 = nn.Linear(n2, n1)
 
     def encode(self, x):
         # h
-        h1 = F.relu(self.fc1(x))
+        h11 = F.relu(self.fc1(x))
+        h1 = F.relu(self.fc11(h11))
         return self.fc21(h1), self.fc22(h1)
 
     def reparametrize(self, mu, logvar):
@@ -60,7 +63,8 @@ class VAE(nn.Module):
 
     def decode(self, z):
         # g
-        h3 = F.relu(self.fc3(z))
+        h33 = F.relu(self.fc3(z))
+        h3 = F.relu(self.fc33(h33))
         return F.sigmoid(self.fc4(h3))
 
     def get_latent_variable(self, mu, logvar):
@@ -76,7 +80,7 @@ class VAE(nn.Module):
         z = self.reparametrize(mu, logvar)
         return self.decode(z), mu, logvar
 
-model = VAE(784,400,20)
+model = VAE(784,450,200,20)
 
 reconstruction_function = nn.MSELoss(size_average=False)
 
@@ -258,13 +262,13 @@ def main1(model,z0,zt):
 
 #############################################################################
 # TRAINING A NEW MODEL
-#train(batchsize = batch_size)
-#save_model(model)
+train(batchsize = batch_size)
+save_model(model)
 #############################################################################
 
 #############################################################################
 # LOADING EXISTING MODEL
-load_model()
+#load_model()
 #############################################################################
 
 z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
