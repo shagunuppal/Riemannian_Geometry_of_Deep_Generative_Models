@@ -26,14 +26,14 @@ from algorithm1 import *
 model = VAE(784,400,20)
 load_model()
 
-T = 3
+T = 10
 dt = 1.0 / T
 
-def initial_velocity(z0):
-	b = z0[1]
-	a = z0[0]
-	v0 = ((b - a)*1.0) / dt
-	o = find_jacobian_1(model,Variable(z0[0], requires_grad=True))
+def initial_velocity(z):
+	b = z[1]
+	a = z[0]
+	v0 = (b - a) / dt
+	o = find_jacobian_1(model,Variable(z[0], requires_grad=True))
 	k1 = torch.matmul(o,v0)
 	return k1	
 
@@ -45,13 +45,11 @@ def make_sigma(sig):
 
 def compute_SVD(matrix):
 	u, sigma, vh = np.linalg.svd(matrix, full_matrices=True)
-	#print(sigma.shape)
 	return (u, sigma, vh)
 
 def mod(x):
 	x1 = x.numpy()
 	p = 0
-	#print(x1.shape)
 	for i in range(784):
 		q = x1[i]
 		p = p + q*q
@@ -80,7 +78,6 @@ def main3(z0, u0):
 		vh = torch.FloatTensor(vh)
 		sigma = make_sigma(sigma)
 		U, sigma, vh, jgg = reduction(U, sigma, vh, Jg)
-		print("size:",U.size())
 		uiplus1 = (torch.matmul(torch.matmul(U, U.t()),u[len(u) - 1])).view(784,1)
 		uiplus1 = (mod(u[len(u) - 1]) / mod(uiplus1)) * uiplus1
 		u.append(uiplus1)
