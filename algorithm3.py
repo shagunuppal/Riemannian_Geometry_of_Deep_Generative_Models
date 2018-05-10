@@ -26,7 +26,7 @@ from algorithm1 import *
 model = VAE(784,400,20)
 load_model()
 
-T = 20
+T = 3
 dt = 1.0 / T
 
 def initial_velocity(z0):
@@ -51,11 +51,11 @@ def compute_SVD(matrix):
 def mod(x):
 	x1 = x.numpy()
 	p = 0
+	print(x1.shape)
 	for i in range(784):
 		q = x1[i]
 		p = p + q*q
-		#print("mod", p)
-		p = math.sqrt(p)
+	p = math.sqrt(p)
 	return p 
 
 def main3(z0, u0):
@@ -70,8 +70,8 @@ def main3(z0, u0):
 		xi = model.decode(z[len(z) - 1]).view(784)
 		ui = u[len(u) - 1].view(784)
 		xiplus1 = Variable(torch.add(xi.data, dt * ui).view(784), requires_grad=True)
-		zxx = model.encode(xiplus1)
-		ziplus1 = Variable(zxx[0].data, requires_grad=True)
+		zxx1, zxx2 = model.encode(xiplus1)
+		ziplus1 = Variable(zxx1.data, requires_grad=True)
 		xiplus1 = model.decode(ziplus1)
 		Jg = find_jacobian_1(model, ziplus1)
 		U, sigma, vh = compute_SVD(Jg)
@@ -80,6 +80,7 @@ def main3(z0, u0):
 		vh = torch.FloatTensor(vh)
 		sigma = make_sigma(sigma)
 		U, sigma, vh, jgg = reduction(U, sigma, vh, Jg)
+		print("size:",U.size())
 		uiplus1 = (torch.matmul(torch.matmul(U, U.t()),u[len(u) - 1])).view(784,1)
 		uiplus1 = (mod(u[len(u) - 1]) / mod(uiplus1)) * uiplus1
 		u.append(uiplus1)

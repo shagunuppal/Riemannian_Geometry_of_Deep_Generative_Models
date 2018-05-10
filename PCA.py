@@ -33,15 +33,16 @@ def reduction(U, sigma, vh, x1):
 	index = -1
 	for i in range(20):
 		z += sigma[i][i]
-		index+=1
 		x = (1.0*(z*100))/y
 		if(x>=90):
 			index = i
 			break
+	index = index + 1
+	rem = 20 - index 
 	if(index!=-1):
-		U = U[:,:index]
-		sigma = sigma[:index,:index]
-		vh = vh[:index,:]
+		U = U[:,:(784-rem)]
+		sigma = sigma[:(784-rem),:rem]
+		vh = vh[:rem,:]
 		x11 = torch.mm(torch.mm(U, sigma), vh)
 	if(index==-1):
 		print("NO")
