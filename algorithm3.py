@@ -21,12 +21,12 @@ import sys, os
 import math
 from PCA import *
 
-from algorithm1 import *
+from algorithm1_new import *
 
-model = VAE(784,400,20)
+model = VAE(784,450,200,20)
 load_model()
 
-T = 2
+T = 4
 dt = 1.0 / T
 
 def initial_velocity(z):
@@ -44,11 +44,11 @@ def make_sigma(sig):
 	return sigma
 
 def compute_SVD(matrix):
-	u, sigma, vh = np.linalg.svd(matrix, full_matrices=True)
+	u, sigma, vh = torch.svd(matrix, some=False)
 	return (u, sigma, vh)
 
 def mod(x):
-	x1 = x.numpy()
+	x1 = x#.numpy()
 	p = 0
 	for i in range(784):
 		q = x1[i]
@@ -66,11 +66,8 @@ def main3(z0, u0):
 
 	for i in range(0,T):
 		xi = model.decode(z[len(z) - 1]).view(784)
-		#print (xi)
+		xi = x[len(x)-1] + 1
 		ui = u[len(u) - 1].view(784)
-		print (i)
-		print (ui)
-		#print(ui)
 		xiplus1 = Variable(torch.add(xi.data, dt * ui).view(784), requires_grad=True)
 		zxx1, zxx2 = model.encode(xiplus1)
 		# if (i > 0):
@@ -78,10 +75,8 @@ def main3(z0, u0):
 		# 	print (xiplus1)
 		# 	print (zxx1)
 		ziplus1 = Variable(zxx1.data, requires_grad=True)
-		#print (ziplus1)
 		xiplus1 = model.decode(ziplus1)
 		Jg = find_jacobian_1(model, ziplus1)
-		#print (Jg)
 		U, sigma, vh = compute_SVD(Jg)
 		U = torch.FloatTensor(U)
 		sigma = torch.FloatTensor(sigma)
@@ -89,12 +84,12 @@ def main3(z0, u0):
 		sigma = make_sigma(sigma)
 		U, sigma, vh, jgg = reduction(U, sigma, vh, Jg)
 		uiplus1 = (torch.matmul(torch.matmul(U, U.t()),u[len(u) - 1]))#.view(784,1)
-		#print (torch.matmul(U, U.t()))
 		uiplus1 = (mod(u[len(u) - 1]) / mod(uiplus1)) * uiplus1
 		u.append(uiplus1)
 		z.append(ziplus1)
 		x.append(xiplus1)
-	make_image(z[len(z)-1].data.view(20),"algo3_final")
+	for i in range(len(z)):
+		make_image(z[i].data.view(20),"algo3_final"+(str)(i))
 	make_image(z[0].data.view(20),"algo3_initial")
 
 z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)

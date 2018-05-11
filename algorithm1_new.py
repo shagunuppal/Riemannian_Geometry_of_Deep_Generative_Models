@@ -20,6 +20,8 @@ import matplotlib.pyplot as plt
 import sys, os
 import math
 
+from distance import *
+
 import torch._utils
 try:
     torch._utils._rebuild_tensor_v2
@@ -155,13 +157,13 @@ def save_model(model):
 
 def linear_interpolation(z0, zt):
     # z0 and zt in FloatTensor
-    z0n = z0 
-    ztn = zt.data
-    z_middle = np.zeros(z0n.shape)
-    for i in range(z0n.shape[0]):
-        z_middle[i] = random.uniform(min(z0n[i], ztn[i]), max(z0n[i], ztn[i]))
-    z_middle_t = torch.from_numpy(z_middle)
-    return z_middle_t.float()
+    z_collection.append(z0)
+    for i in range(T-2):
+        z0n = z_collection[len(z_collection)-1] + (zt-z0)*dt
+        z_collection.append(z0n)
+        print("distance_"+(str)(i+1),linear_distance(z_collection[len(z_collection)-2],z_collection[len(z_collection)-1]))   
+    z_collection.append(zt) 
+    print("distance_"+(str)(T-1),linear_distance(z_collection[len(z_collection)-2],z_collection[len(z_collection)-1]))  
 
 def find_jacobian(model, z1): #Jh
 	z = z1
@@ -188,9 +190,9 @@ def find_jacobian_1(model, z1): #Jg
 		z.grad.data.zero_()
 	return jacobian
 
-T = 4
+T = 8
 dt = 1.0 / T
-epsilon = 6
+epsilon = 1000
 z_collection = []
 delta_e = torch.FloatTensor(20,784).zero_()
 
@@ -217,12 +219,13 @@ def find_etta_i(model,z0,z1,z2):
 
 def find_mod(x):
     # x is float tensor
-	p = 0
-	x1 = x.numpy()
-	for i in range(20):
-		q = x1[i]
-		p += q*q
-	return p[0]
+    p = 0
+    x = x.data
+    x1 = x.numpy()
+    for i in range(20):
+        q = x1[i]
+        p += q*q
+    return p
 
 def sum_energy(model):
 	delta_e = torch.FloatTensor(20,784).zero_()
@@ -251,15 +254,9 @@ def make_image_1(x,name):
 
 def main1(model,z0,zt):
     step_size = 0.1
-    z0 = z0.data # 20 size FloatTensor
-    z_collection.append(z0)
-    
-    for i in range(T-2):
-        w = linear_interpolation(z0,zt)
-        z_collection.append(w)
-    zt = zt.data
-    z_collection.append(zt)
-    j=0
+    y = linear_distance(z0,zt)
+    print("distance_ends:",y)
+    linear_interpolation(z0,zt)
     #print(sum_energy_1(model))
     while (sum_energy_1(model) > epsilon):
     	print(sum_energy_1(model))
@@ -268,8 +265,8 @@ def main1(model,z0,zt):
         	e1 = step_size*etta_i
         	z_collection[i] = z_collection[i].view(20,1)
         	z_collection[i] = z_collection[i] - e1
-    # for p in range(T):
-    # 	make_image(z=z_collection[p].view(20),name=str(p))
+    #for p in range(T):
+        #make_image(z=z_collection[p].view(20),name=str(p))
     return z_collection
 
 #############################################################################

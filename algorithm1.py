@@ -137,15 +137,19 @@ def load_model():
 def save_model(model):
 	torch.save(model.state_dict(), './vae.pth')
 
+T = 4
+dt = 1.0 / T
+epsilon = 5
+z_collection = []
+delta_e = torch.FloatTensor(20,784).zero_()
+
 def linear_interpolation(z0, zt):
     # z0 and zt in FloatTensor
-    z0n = z0 
-    ztn = zt.data
-    z_middle = np.zeros(z0n.shape)
-    for i in range(z0n.shape[0]):
-        z_middle[i] = random.uniform(min(z0n[i], ztn[i]), max(z0n[i], ztn[i]))
-    z_middle_t = torch.from_numpy(z_middle)
-    return z_middle_t.float()
+    z_collection.append(z0)
+    for i in range(T-2):
+        z0n = z_collection[len(z_collection)-1] + (zt-z0)*dt
+        z_collection.append(z0n)   
+    z_collection.append(zt) 
 
 def find_jacobian(model, z1): #Jh
 	z = z1
@@ -172,21 +176,16 @@ def find_jacobian_1(model, z1): #Jg
 		z.grad.data.zero_()
 	return jacobian
 
-T = 4
-dt = 1.0 / T
-epsilon = 6
-z_collection = []
-delta_e = torch.FloatTensor(20,784).zero_()
 
 def find_energy(model,z0, z1, z2):
     a11 = find_jacobian_1(model,Variable(z1, requires_grad=True))
     a1 = torch.transpose(find_jacobian_1(model,Variable(z1, requires_grad=True)),0,1)
     a2 = ((model.decode(Variable(z2)) - 2*model.decode(Variable(z1))+model.decode(Variable(z0))).data).view(784,1)
-    e = -(1 / dt)*(torch.mm(a1,a2))
+    e = -(1.0 / dt)*(torch.mm(a1,a2))
     return e
 
 def find_etta_i(model,z0,z1,z2):
-	dt = 1/T
+	dt = 1.0/T
 	z0 = z0.view(20)
 	z1 = z1.view(20)
 	z2 = z2.view(20)
@@ -196,7 +195,7 @@ def find_etta_i(model,z0,z1,z2):
 	x3 = model.decode(Variable(z0))
 	a21 = (x1-x2+x3).data
 	a2 = a21.view(784,1)
-	e = -(1 / dt)*torch.mm(a1,a2)
+	e = -(1.0 / dt)*torch.mm(a1,a2)
 	return e
 
 def find_mod(x):
@@ -215,11 +214,18 @@ def sum_energy(model):
 	multi = (torch.mm((delta_e),torch.transpose(delta_e,0,1)))
 	return multi
 
+# def sum_energy_1(model):
+# 	delta_e = torch.FloatTensor(20,1).zero_()
+# 	for i in range(1,T-2):
+# 		delta_e += find_energy(model,z_collection[i-1].view(20),z_collection[i].view(20),z_collection[i+1].view(20))
+# 	return find_mod(delta_e)
+
 def sum_energy_1(model):
-	delta_e = torch.FloatTensor(20,1).zero_()
-	for i in range(1,T-2):
-		delta_e += find_energy(model,z_collection[i-1].view(20),z_collection[i].view(20),z_collection[i+1].view(20))
-	return find_mod(delta_e)
+    delta_e = torch.FloatTensor(20,1).zero_()
+    for i in range(1,T-2):
+        print(len(z_collection))
+        delta_e += find_energy(model, z_collection[i-1].view(20), z_collection[i].view(20), z_collection[i+1].view(20))
+    return find_mod(delta_e)
 
 def make_image(z,name):
     x = model.decode(Variable(z))
@@ -235,16 +241,8 @@ def make_image_1(x,name):
 
 def main1(model,z0,zt):
     step_size = 0.1
-    z0 = z0.data # 20 size FloatTensor
-    z_collection.append(z0)
-    
-    for i in range(T-2):
-        w = linear_interpolation(z0,zt)
-        z_collection.append(w)
-    zt = zt.data
-    z_collection.append(zt)
-    j=0
-    #print(sum_energy_1(model))
+    linear_interpolation(z0,zt)
+
     while (sum_energy_1(model) > epsilon):
     	print(sum_energy_1(model))
     	for i in range(1,T-1):
@@ -252,8 +250,8 @@ def main1(model,z0,zt):
         	e1 = step_size*etta_i
         	z_collection[i] = z_collection[i].view(20,1)
         	z_collection[i] = z_collection[i] - e1
-    # for p in range(T):
-    # 	make_image(z=z_collection[p].view(20),name=str(p))
+    for p in range(T):
+     	make_image(z=z_collection[p].view(20),name=str(p))
     return z_collection
 
 #############################################################################
@@ -271,7 +269,7 @@ z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 zt = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 zt1 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 
-#main1(model=model,z0=z0, zt=zt)
+main1(model=model,z0=z0, zt=zt)
 
 
 	
