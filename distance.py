@@ -1,4 +1,3 @@
-# Algorithm 1 : Geodesic Path
 
 import torch
 import torchvision
@@ -33,3 +32,14 @@ def find_mod1(x):
 def linear_distance(z1,z2):
     x = z2 - z1
     return find_mod1(x)
+
+# def arc_length(model, z1, z2):
+#     x = 0 
+#     x = model.decode(z2) - model.decode(z1)
+#     return x * T
+
+# def geodesic_length(model, z_collection):
+#     x = 0
+#     for i in range(1,T):
+#         x += model.decode(z_collection[i]) -  model.decode(z_collection[i-1])
+#     return x * T

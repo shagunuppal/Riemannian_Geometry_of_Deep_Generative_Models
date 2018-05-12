@@ -161,9 +161,11 @@ def linear_interpolation(z0, zt):
     for i in range(T-2):
         z0n = z_collection[len(z_collection)-1] + (zt-z0)*dt
         z_collection.append(z0n)
-        print("distance_"+(str)(i+1),linear_distance(z_collection[len(z_collection)-2],z_collection[len(z_collection)-1]))   
+        print("distance_"+(str)(i+1),linear_distance(z_collection[len(z_collection)-2],z_collection[len(z_collection)-1])) 
+        print("arclength_"+(str)(i+1),arc_length(model, z_collection[len(z_collection)-2],z_collection[len(z_collection)-1]))   
     z_collection.append(zt) 
     print("distance_"+(str)(T-1),linear_distance(z_collection[len(z_collection)-2],z_collection[len(z_collection)-1]))  
+    print("arc_length"+(str)(T-1),arc_length(model, z_collection[len(z_collection)-2],z_collection[len(z_collection)-1])) 
 
 def find_jacobian(model, z1): #Jh
 	z = z1
@@ -190,7 +192,7 @@ def find_jacobian_1(model, z1): #Jg
 		z.grad.data.zero_()
 	return jacobian
 
-T = 8
+T = 4
 dt = 1.0 / T
 epsilon = 1000
 z_collection = []
@@ -227,6 +229,16 @@ def find_mod(x):
         p += q*q
     return p
 
+def find_mod1(x):
+    # x is float tensor
+    p = 0
+    x = x.data
+    x1 = x.numpy()
+    for i in range(784):
+        q = x1[i]
+        p += q*q
+    return math.sqrt(p)
+
 def sum_energy(model):
 	delta_e = torch.FloatTensor(20,784).zero_()
 	for i in range(1,T-2):
@@ -252,12 +264,25 @@ def make_image_1(x,name):
     plt.imshow(img, cmap = 'gray', interpolation = 'nearest')
     plt.savefig('./' + name + '.jpg')
 
+def arc_length(model, z1, z2):
+    x = 0 
+    x = model.decode(z2) - model.decode(z1)
+    x1 = find_mod1(x)
+    return x1 * T
+
+def geodesic_length(model, z_collection):
+    x = 0
+    for i in range(1,T):
+        x += find_mod1( model.decode(z_collection[i]) -  model.decode(z_collection[i-1]) )
+    return x * T
+
 def main1(model,z0,zt):
     step_size = 0.1
     y = linear_distance(z0,zt)
     print("distance_ends:",y)
     linear_interpolation(z0,zt)
     #print(sum_energy_1(model))
+    print("geodesic_ends:",geodesic_length(model, z_collection))
     while (sum_energy_1(model) > epsilon):
     	print(sum_energy_1(model))
     	for i in range(1,T-1):
@@ -265,8 +290,8 @@ def main1(model,z0,zt):
         	e1 = step_size*etta_i
         	z_collection[i] = z_collection[i].view(20,1)
         	z_collection[i] = z_collection[i] - e1
-    #for p in range(T):
-        #make_image(z=z_collection[p].view(20),name=str(p))
+    # for p in range(T):
+    #     make_image(z=z_collection[p].view(20),name=str(p))
     return z_collection
 
 #############################################################################
