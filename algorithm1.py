@@ -214,12 +214,6 @@ def sum_energy(model):
 	multi = (torch.mm((delta_e),torch.transpose(delta_e,0,1)))
 	return multi
 
-# def sum_energy_1(model):
-# 	delta_e = torch.FloatTensor(20,1).zero_()
-# 	for i in range(1,T-2):
-# 		delta_e += find_energy(model,z_collection[i-1].view(20),z_collection[i].view(20),z_collection[i+1].view(20))
-# 	return find_mod(delta_e)
-
 def sum_energy_1(model):
     delta_e = torch.FloatTensor(20,1).zero_()
     for i in range(1,T-2):
