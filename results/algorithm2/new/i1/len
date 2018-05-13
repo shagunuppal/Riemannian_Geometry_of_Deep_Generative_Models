@@ -1,0 +1,18 @@
+distance_ends: 6.899893668157952
+geodesic_ends: 3.807677420279454
+
+distance_1 1.7249734299676929
+arclength_1 13.901369995806531
+
+distance_2 1.7249734126907181
+arclength_2 18.498863300491465
+
+distance_3 3.449946812541809
+arc_length3 28.68140726149188
+
+tangentangle_1 tensor(1.00000e-05 *
+       -3.7873)
+tangentangle_2 tensor(1.00000e-04 *
+       3.4889)
+tangentangle_3 tensor(1.00000e-04 *
+       3.4744)

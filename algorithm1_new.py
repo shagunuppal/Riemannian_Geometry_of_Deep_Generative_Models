@@ -290,8 +290,8 @@ def main1(model,z0,zt):
         	e1 = step_size*etta_i
         	z_collection[i] = z_collection[i].view(20,1)
         	z_collection[i] = z_collection[i] - e1
-    for p in range(T):
-    	make_image(z=z_collection[p].view(20),name=str(p))
+    # for p in range(T):
+    # 	make_image(z=z_collection[p].view(20),name=str(p))
     return z_collection
 
 #############################################################################
@@ -309,7 +309,7 @@ z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 zt = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 zt1 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 
-main1(model=model,z0=z0, zt=zt)
+#main1(model=model,z0=z0, zt=zt)
 
 
 	
