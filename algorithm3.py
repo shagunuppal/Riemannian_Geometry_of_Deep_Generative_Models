@@ -70,10 +70,6 @@ def main3(z0, u0):
 		ui = u[len(u) - 1].view(784)
 		xiplus1 = Variable(torch.add(xi.data, dt * ui).view(784), requires_grad=True)
 		zxx1, zxx2 = model.encode(xiplus1)
-		# if (i > 0):
-		# 	print (i)
-		# 	print (xiplus1)
-		# 	print (zxx1)
 		ziplus1 = Variable(zxx1.data, requires_grad=True)
 		xiplus1 = model.decode(ziplus1)
 		Jg = find_jacobian_1(model, ziplus1)
@@ -90,7 +86,7 @@ def main3(z0, u0):
 		x.append(xiplus1)
 	for i in range(len(z)):
 		make_image(z[i].data.view(20),"algo3_final"+(str)(i))
-	make_image(z[0].data.view(20),"algo3_initial")
+	#make_image(z[0].data.view(20),"algo3_initial")
 
 z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 z1 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)

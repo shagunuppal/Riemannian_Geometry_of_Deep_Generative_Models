@@ -154,6 +154,7 @@ def linear_interpolation(z0, zt):
 def find_jacobian(model, z1): #Jh
 	z = z1
 	dec = Variable(model.decode(z).data, requires_grad=True)
+    print("zzz:",dec)
 	enc1, enc2 = model.encode(dec)
 	jacobian = torch.FloatTensor(20,784).zero_()
 	for j in range(20):
@@ -167,6 +168,7 @@ def find_jacobian(model, z1): #Jh
 def find_jacobian_1(model, z1): #Jg
 	z = z1
 	dec = model.decode(z)
+    print("zzz:",dec)
 	jacobian = torch.FloatTensor(784,20).zero_()
 	for j in range(784):
 		f = torch.FloatTensor(784).zero_()

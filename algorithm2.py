@@ -31,11 +31,23 @@ def find_v0(z):
 	a = z[0]
 	v0 = ((b - a)*1.0) / dt
 	# v0 is 20 size float tensor 
+	x1 = find_jacobian(model, Variable(z[0],requires_grad=True))
+	U, sigma, vh = compute_SVD(x1)
+	U = torch.FloatTensor(U)
+	sigma = torch.FloatTensor(sigma)
+	vh = torch.FloatTensor(vh)
+	sigma = make_sigma(sigma)
+	#print(torch.matmul(U,U.t()))
+	U, sigma, vh, xii = reduction1(U, sigma, vh, x1)
+	v0 = torch.matmul(v0,torch.matmul(U,U.t()))
 	return v0
 
 def compute_SVD(matrix):
 	u, sigma, vh = torch.svd(matrix, some=False)
 	return (u, sigma, vh)
+
+def rad2deg(rad):
+	return (rad*180/math.pi)
 
 def make_sigma(sig):
 	sigma = torch.zeros(784,20)
@@ -106,19 +118,23 @@ def main2(z_collection):
 		make_image(z_collection[i].view(20), "algo2_latent"+(str)(i))	
 	for i in range(len(v)):
 		if(i!=0):
-			print("tangentangle_"+(str)(i),find_angle(v[i-1],v[i]))
+			angle = find_angle(v[i-1],v[i])
+			angle = angle.data.numpy()
+			#print (angle)
+			print("tangentangle_"+(str)(i),rad2deg(math.acos(angle)))
 		make_image(v[i].view(20),"algo2_tangent"+(str)(i))
 	#make_image(z_collection[0].view(20), "algo2_initial")
 	#make_image(z_collection[len(z_collection)-1].view(20), "algo2_final")
 	#print ("2",z_collection[len(z_collection)-1])
 	return vt
 
-zt = torch.FloatTensor(20).normal_().view(20,1)
 z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 z1 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 
+#load_model()
+
 z_ = main1(model,z0,z1)
-main2(z_collection=z_)
+#main2(z_collection=z_)
 
 
 
