@@ -37,7 +37,6 @@ def find_v0(z):
 	sigma = torch.FloatTensor(sigma)
 	vh = torch.FloatTensor(vh)
 	sigma = make_sigma(sigma)
-	#print(torch.matmul(U,U.t()))
 	U, sigma, vh, xii = reduction1(U, sigma, vh, x1)
 	v0 = torch.matmul(v0,torch.matmul(U,U.t()))
 	return v0
@@ -85,7 +84,7 @@ def find_angle(v1,v2):
 	num = sum(v)
 	return num/v1_mod*v2_mod 
 
-def main2(z_collection):
+def main2(model,z_collection):
 	u = []
 	v = []
 	v0 = find_v0(z_collection)
@@ -96,45 +95,37 @@ def main2(z_collection):
 	
 	for i in range (T):
 		xi = model.decode(Variable(z_collection[i],requires_grad=True))
-		x1 = find_jacobian_1(model, Variable(z_collection[i+1],requires_grad=True))
+		x1 = find_jacobian_1(model, Variable(z_collection[i+1].view(20),requires_grad=True))
 		U, sigma, vh = compute_SVD(x1)
 		U = torch.FloatTensor(U)
-		sigma = torch.FloatTensor(sigma)
-		vh = torch.FloatTensor(vh)
-		sigma = make_sigma(sigma)
-		U, sigma, vh, xii = reduction(U, sigma, vh, x1)
-		ui = torch.matmul(torch.matmul(U, U.t()),u[len(u) - 1].view(784,1))
-		ui = (mod( u[len(u) - 1].view(784,1) ) / mod(ui)) * ui
-		vt_ = find_jacobian(model, Variable(z_collection[len(z_collection) - 1],requires_grad=True))
-		vt = torch.mm(vt_, ui.view(784,1))
+		print(torch.matmul(U.t(), U))
+		ui = torch.matmul(torch.matmul(U.t(), U),u[len(u) - 1].view(784,1))
+		ui = (mod( u[len(u) - 1].view(784) ) / mod(ui)) * ui.view(784)
+		vt_ = find_jacobian(model, Variable(z_collection[i],requires_grad=True))
+		vt = torch.matmul(vt_, ui.view(784,1))
 		v.append(vt)
 		u.append(ui.view(784))
 
 	ut = u[len(u) - 1]
 	vt_ = find_jacobian(model, Variable(z_collection[len(z_collection) - 1],requires_grad=True))
 	vt = torch.mm(vt_, ut.view(784,1))
-	#make_image(model,vt.view(20),"algo2_final_tangentspace")
 	for i in range(len(z_collection)):
 		make_image(model,z_collection[i].view(20), "algo2_latent"+(str)(i))	
 	for i in range(len(v)):
+		make_image(model,v[i].view(20),"algo2_tangent"+(str)(i))
 		if(i!=0):
 			angle = find_angle(v[i-1],v[i])
 			angle = angle.data.numpy()
-			#print (angle)
-			print("tangentangle_"+(str)(i),rad2deg(math.acos(angle)))
-		make_image(model,v[i].view(20),"algo2_tangent"+(str)(i))
-	#make_image(model,z_collection[0].view(20), "algo2_initial")
-	#make_image(model,z_collection[len(z_collection)-1].view(20), "algo2_final")
-	#print ("2",z_collection[len(z_collection)-1])
+			#angle_cos_inv = math.acos(angle)
 	return vt
 
 z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 z1 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 
-#load_model()
+model = load_model()
 
 z_ = main1(model,z0,z1)
-#main2(z_collection=z_)
+main2(model,z_collection=z_)
 
 
 

@@ -157,13 +157,11 @@ def save_model(model):
 
 def linear_interpolation(model,z0, zt):
 	z_collection.append(z0)
-	print(z0)
-	print("hii",model.decode(z_collection[0]))
 	for i in range(T-2):
 		z0n = z_collection[len(z_collection)-1] + (zt-z0)*dt
 		z_collection.append(z0n)
 		#print("distance_"+(str)(i+1),linear_distance(z_collection[len(z_collection)-2],z_collection[len(z_collection)-1])) 
-		print("arclength_"+(str)(i+1),arc_length(model, z_collection[len(z_collection)-2],z_collection[len(z_collection)-1]))   
+		#print("arclength_"+(str)(i+1),arc_length(model, z_collection[len(z_collection)-2],z_collection[len(z_collection)-1]))   
 	z_collection.append(zt) 
 	#print("distance_"+(str)(T-1),linear_distance(z_collection[len(z_collection)-2],z_collection[len(z_collection)-1]))  
 	#print("arc_length"+(str)(T-1),arc_length(model, z_collection[len(z_collection)-2],z_collection[len(z_collection)-1])) 
@@ -207,7 +205,7 @@ def find_jacobian_1(model, z1): #Jg
 
 T = 4
 dt = 1.0 / T
-epsilon = 1000
+epsilon = 2500
 z_collection = []
 delta_e = torch.FloatTensor(20,784).zero_()
 
@@ -267,41 +265,36 @@ def sum_energy_1(model):
 
 def make_image(model,z,name):
 	x = model.decode(Variable(z))
+	#print("decoded",x)
 	x = x.view(28,28)
 	img = x.data.numpy()
 	plt.imshow(img, cmap = 'gray', interpolation = 'nearest')
 	plt.savefig('./' + name + '.jpg')
 
-def make_image_1(x,name):
-	img = x.numpy().reshape(28,28)
-	plt.imshow(img, cmap = 'gray', interpolation = 'nearest')
-	plt.savefig('./' + name + '.jpg')
+# def make_image_1(x,name):
+# 	img = x.numpy().reshape(28,28)
+# 	plt.imshow(img, cmap = 'gray', interpolation = 'nearest')
+# 	plt.savefig('./' + name + '.jpg')
 
 def arc_length(model, z1, z2):
 	xx = 0 
-	print("there",model.decode(z_collection[0]))
-	xx = model.decode(z_collection[1]) - model.decode(z_collection[0])
-	#print("final",model.decode(z_collection[1]))
+	xx = model.decode(z2) - model.decode(z1)
 	xx1 = find_mod1(xx)
 	return xx1 * T
 
 def geodesic_length(model, z_collection):
 	xx = 0
-	print("first",model.decode(z_collection[1]))
 	for i in range(1,T):
-		xx = model.decode(z_collection[1]) -  model.decode(z_collection[0]) 
+		xx = model.decode(z_collection[i]) -  model.decode(z_collection[i-1]) 
 		xx = find_mod1(xx)*T
-		#print("first",model.decode(z_collection[1])) 
 	return xx
 
 def main1(model,z0,zt):
 	step_size = 0.1
-	print("aa gaya")
 	y = linear_distance(z0,zt)
 	#print("distance_ends:",y)
-	print("yahan")
 	linear_interpolation(model,z0,zt)
-	print("here",model.decode(z_collection[0]))
+	#print("algo_1",model.decode(z_collection[0]))
 	#print("arclength:",arc_length(model,z_collection[1],z_collection[0]))
 	#print("geodesic_ends:",geodesic_length(model, z_collection))
 	while (sum_energy_1(model) > epsilon):
@@ -312,7 +305,7 @@ def main1(model,z0,zt):
 			z_collection[i] = z_collection[i].view(20,1)
 			z_collection[i] = z_collection[i] - e1
 	# for p in range(T):
-	# 	make_image(model,z=z_collection[p].view(20),name=str(p))
+	#  	make_image(model,z=z_collection[p].view(20),name=str(p))
 	return z_collection
 
 #############################################################################
@@ -323,7 +316,7 @@ def main1(model,z0,zt):
 
 #############################################################################
 # LOADING EXISTING MODEL
-load_model()
+#load_model()
 #############################################################################
 
 z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
