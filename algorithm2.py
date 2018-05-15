@@ -113,18 +113,18 @@ def main2(z_collection):
 	ut = u[len(u) - 1]
 	vt_ = find_jacobian(model, Variable(z_collection[len(z_collection) - 1],requires_grad=True))
 	vt = torch.mm(vt_, ut.view(784,1))
-	#make_image(vt.view(20),"algo2_final_tangentspace")
+	#make_image(model,vt.view(20),"algo2_final_tangentspace")
 	for i in range(len(z_collection)):
-		make_image(z_collection[i].view(20), "algo2_latent"+(str)(i))	
+		make_image(model,z_collection[i].view(20), "algo2_latent"+(str)(i))	
 	for i in range(len(v)):
 		if(i!=0):
 			angle = find_angle(v[i-1],v[i])
 			angle = angle.data.numpy()
 			#print (angle)
 			print("tangentangle_"+(str)(i),rad2deg(math.acos(angle)))
-		make_image(v[i].view(20),"algo2_tangent"+(str)(i))
-	#make_image(z_collection[0].view(20), "algo2_initial")
-	#make_image(z_collection[len(z_collection)-1].view(20), "algo2_final")
+		make_image(model,v[i].view(20),"algo2_tangent"+(str)(i))
+	#make_image(model,z_collection[0].view(20), "algo2_initial")
+	#make_image(model,z_collection[len(z_collection)-1].view(20), "algo2_final")
 	#print ("2",z_collection[len(z_collection)-1])
 	return vt
 

@@ -85,8 +85,8 @@ def main3(z0, u0):
 		z.append(ziplus1)
 		x.append(xiplus1)
 	for i in range(len(z)):
-		make_image(z[i].data.view(20),"algo3_final"+(str)(i))
-	#make_image(z[0].data.view(20),"algo3_initial")
+		make_image(model,z[i].data.view(20),"algo3_final"+(str)(i))
+	#make_image(model,z[0].data.view(20),"algo3_initial")
 
 z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 z1 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)

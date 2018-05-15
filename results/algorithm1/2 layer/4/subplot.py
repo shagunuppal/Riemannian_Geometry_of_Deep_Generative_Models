@@ -12,6 +12,7 @@ from scipy.misc import imread
 
 def plot_images():
     folder = path.realpath("i5")
+    #print(folder)
     images = os.listdir(folder)
     print(images)
     i = 0

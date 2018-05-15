@@ -155,8 +155,9 @@ def load_model():
 def save_model(model):
 	torch.save(model.state_dict(), './vae2.pth')
 
-def linear_interpolation(z0, zt):
+def linear_interpolation(model,z0, zt):
 	z_collection.append(z0)
+	print(z0)
 	print("hii",model.decode(z_collection[0]))
 	for i in range(T-2):
 		z0n = z_collection[len(z_collection)-1] + (zt-z0)*dt
@@ -264,7 +265,7 @@ def sum_energy_1(model):
 		delta_e += find_energy(model,z_collection[i-1].view(20),z_collection[i].view(20),z_collection[i+1].view(20))
 	return find_mod(delta_e)
 
-def make_image(z,name):
+def make_image(model,z,name):
 	x = model.decode(Variable(z))
 	x = x.view(28,28)
 	img = x.data.numpy()
@@ -295,9 +296,11 @@ def geodesic_length(model, z_collection):
 
 def main1(model,z0,zt):
 	step_size = 0.1
+	print("aa gaya")
 	y = linear_distance(z0,zt)
 	#print("distance_ends:",y)
-	linear_interpolation(z0,zt)
+	print("yahan")
+	linear_interpolation(model,z0,zt)
 	print("here",model.decode(z_collection[0]))
 	#print("arclength:",arc_length(model,z_collection[1],z_collection[0]))
 	#print("geodesic_ends:",geodesic_length(model, z_collection))
@@ -309,7 +312,7 @@ def main1(model,z0,zt):
 			z_collection[i] = z_collection[i].view(20,1)
 			z_collection[i] = z_collection[i] - e1
 	# for p in range(T):
-	# 	make_image(z=z_collection[p].view(20),name=str(p))
+	# 	make_image(model,z=z_collection[p].view(20),name=str(p))
 	return z_collection
 
 #############################################################################
