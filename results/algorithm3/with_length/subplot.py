@@ -11,7 +11,7 @@ import math
 from scipy.misc import imread
 
 def plot_images():
-    folder = path.realpath("i2")
+    folder = path.realpath("i1")
     images = os.listdir(folder)
     print(images)
     i = 0
@@ -20,7 +20,7 @@ def plot_images():
     plt.figure(figsize=[24,10]) # set image size
     plt.subplots_adjust(wspace = 0.125)# set distance between the subplots
     for image in images:
-        plt.subplot(2,len(images)/2,i+1)
+        plt.subplot(1,len(images),i+1)
         im = imread(folder+'/'+image)
         i+=1
         imgplot = plt.imshow(im) 
