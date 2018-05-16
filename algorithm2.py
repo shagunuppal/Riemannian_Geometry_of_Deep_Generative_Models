@@ -80,9 +80,12 @@ def find_angle(v1,v2):
 	v2 = v2.view(20)
 	v = v1*v2
 	v1_mod = chhota_mod(v1)
+	print ("v1",v1_mod)
 	v2_mod = chhota_mod(v2)
+	print ("v2",v2_mod)
 	num = sum(v)
-	return num/v1_mod*v2_mod 
+	print ("sum",num)
+	return (num/(v1_mod*v2_mod)) 
 
 def main2(model,z_collection):
 	u = []
@@ -116,6 +119,7 @@ def main2(model,z_collection):
 		if(i!=0):
 			angle = find_angle(v[i-1],v[i])
 			angle = angle.data.numpy()
+			print(angle)
 			#angle_cos_inv = math.acos(angle)
 	return vt
 

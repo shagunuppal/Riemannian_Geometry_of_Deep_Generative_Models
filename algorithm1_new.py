@@ -160,11 +160,11 @@ def linear_interpolation(model,z0, zt):
 	for i in range(T-2):
 		z0n = z_collection[len(z_collection)-1] + (zt-z0)*dt
 		z_collection.append(z0n)
-		#print("distance_"+(str)(i+1),linear_distance(z_collection[len(z_collection)-2],z_collection[len(z_collection)-1])) 
-		#print("arclength_"+(str)(i+1),arc_length(model, z_collection[len(z_collection)-2],z_collection[len(z_collection)-1]))   
+		print("distance_"+(str)(i+1),linear_distance(z_collection[len(z_collection)-2],z_collection[len(z_collection)-1])) 
+		print("arclength_"+(str)(i+1),arc_length(model, z_collection[len(z_collection)-2],z_collection[len(z_collection)-1]))   
 	z_collection.append(zt) 
-	#print("distance_"+(str)(T-1),linear_distance(z_collection[len(z_collection)-2],z_collection[len(z_collection)-1]))  
-	#print("arc_length"+(str)(T-1),arc_length(model, z_collection[len(z_collection)-2],z_collection[len(z_collection)-1])) 
+	print("distance_"+(str)(T-1),linear_distance(z_collection[len(z_collection)-2],z_collection[len(z_collection)-1]))  
+	print("arc_length"+(str)(T-1),arc_length(model, z_collection[len(z_collection)-2],z_collection[len(z_collection)-1])) 
 
 def find_jacobian(model, z1): #Jh
 	z = z1
@@ -271,11 +271,6 @@ def make_image(model,z,name):
 	plt.imshow(img, cmap = 'gray', interpolation = 'nearest')
 	plt.savefig('./' + name + '.jpg')
 
-# def make_image_1(x,name):
-# 	img = x.numpy().reshape(28,28)
-# 	plt.imshow(img, cmap = 'gray', interpolation = 'nearest')
-# 	plt.savefig('./' + name + '.jpg')
-
 def arc_length(model, z1, z2):
 	xx = 0 
 	xx = model.decode(z2) - model.decode(z1)
@@ -285,18 +280,16 @@ def arc_length(model, z1, z2):
 def geodesic_length(model, z_collection):
 	xx = 0
 	for i in range(1,T):
-		xx = model.decode(z_collection[i]) -  model.decode(z_collection[i-1]) 
-		xx = find_mod1(xx)*T
+		xx1 = model.decode(z_collection[i]) -  model.decode(z_collection[i-1]) 
+		xx += find_mod1(xx1)*T
 	return xx
 
 def main1(model,z0,zt):
 	step_size = 0.1
 	y = linear_distance(z0,zt)
-	#print("distance_ends:",y)
+	print("distance_ends:",y)
 	linear_interpolation(model,z0,zt)
-	#print("algo_1",model.decode(z_collection[0]))
-	#print("arclength:",arc_length(model,z_collection[1],z_collection[0]))
-	#print("geodesic_ends:",geodesic_length(model, z_collection))
+	print("geodesic_ends:",geodesic_length(model, z_collection))
 	while (sum_energy_1(model) > epsilon):
 		print(sum_energy_1(model))
 		for i in range(1,T-1):
