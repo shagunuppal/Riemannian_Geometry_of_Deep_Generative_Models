@@ -77,8 +77,8 @@ class VAE(nn.Module):
 
 	def decode(self, z):
 		# g
-		h33 = F.relu(self.fc3(z)) #20-200
-		h3 = F.relu(self.fc33(h33)) #200-450
+		h33 = F.elu(self.fc3(z)) #20-200
+		h3 = F.elu(self.fc33(h33)) #200-450
 		return F.sigmoid(self.fc4(h3)) #450-784
 
 	def get_latent_variable(self, mu, logvar):
@@ -191,18 +191,6 @@ def find_jacobian_1(model, z1): #Jg
 		z.grad.data.zero_()
 	return jacobian
 
-# def find_jacobian_1(model, z1):
-# 	z = z1
-# 	dec = model.decode(z)
-# 	jacobian = torch.FloatTensor(784,20).zero_()
-# 	for j in range(784):
-# 		n = dec[j]
-# 		n.backward(retain_graph=True)
-# 		jacobian[j,:] = z.grad.data
-# 	print ("J",jacobian)
-# 	return jacobian
-
-
 T = 4
 dt = 1.0 / T
 epsilon = 2500
@@ -303,8 +291,8 @@ def main1(model,z0,zt):
 
 #############################################################################
 # TRAINING A NEW MODEL
-# train(batchsize = batch_size)
-# save_model(model)
+#train(batchsize = batch_size)
+#save_model(model)
 #############################################################################
 
 #############################################################################
