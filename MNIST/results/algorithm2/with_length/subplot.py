@@ -11,7 +11,7 @@ import math
 from scipy.misc import imread
 
 def plot_images():
-    folder = path.realpath("i2")
+    folder = path.realpath("i4")
     images = os.listdir(folder)
     print(images)
     i = 0
