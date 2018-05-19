@@ -1,4 +1,6 @@
 import os, time, sys
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import itertools
 import pickle
@@ -12,25 +14,40 @@ from torch.autograd import Variable
 import argparse
 from torchvision import transforms
 from torchvision.utils import save_image
-from tensorboard_logger import configure, log_value
+from random import randint
 import numpy as np
+#from tensorboard_logger import configure, log_value
 
-configure('logs/' + 'CelebA_loss')
-log_value('recon_loss', 1.0, 0)
+#configure('logs/' + 'CelebA_loss')
+#log_value('recon_loss', 1.0, 0)
 
 ################################################################################################################################################################################
 
-num_epochs = 1
+parser = argparse.ArgumentParser(description='VAE CelebA Example')
+parser.add_argument('--batch-size', type=int, default=100, metavar='N',
+                    help='input batch size for training (default: 128)')
+parser.add_argument('--epochs', type=int, default=1, metavar='N',
+                    help='number of epochs to train (default: 10)')
+parser.add_argument('--no-cuda', action='store_true', default=False,
+                    help='enables CUDA training')
+parser.add_argument('--seed', type=int, default=1, metavar='S',
+                    help='random seed (default: 1)')
+parser.add_argument('--log-interval', type=int, default=10, metavar='N',
+                    help='how many batches to wait before logging training status')
+
+args = parser.parse_args()
+
+num_epochs = 100
 batch_size = 100
 learning_rate = 0.0002
 
-mean = Variable(torch.zeros(100,32))
-log_variance = Variable(torch.zeros(100,32))
+mean = Variable(torch.zeros(100,32).cuda())
+log_variance = Variable(torch.zeros(100,32).cuda())
 
-img_transform = transforms.Compose([transforms.ToTensor()])
+mg_transform = transforms.Compose([transforms.ToTensor()])
 
-if not os.path.exists('./vae_img'):
-    os.mkdir('./vae_img')
+if not os.path.exists('./vae_img_cuda'):
+    os.mkdir('./vae_img_cuda')
 
 def to_img(x):
     x = x.clamp(0, 1)
@@ -107,7 +124,7 @@ class VAE(nn.Module):
     def reparametrize(self, mu, logvar):
         std = logvar.mul(0.5).exp_()
         eps = torch.FloatTensor(std.size()).normal_()
-        eps = Variable(eps)
+        eps = Variable(eps.cuda())
         return eps.mul(std).add_(mu) 
 
     def forward(self, x):
@@ -126,7 +143,7 @@ class VAE(nn.Module):
             num_features *= s
         return num_features
 
-model = VAE()
+model = VAE().cuda()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 reconstruction_function = nn.MSELoss(size_average=False)
 
@@ -151,13 +168,13 @@ def train(batchsize):
     train_set = torch.utils.data.DataLoader(dset, batch_size=batch_size, shuffle=True)
     
     for epoch in range(num_epochs):
-        running_loss = []
-        model.train()
+        #running_loss = []
+        model.train().cuda()
         train_loss = 0
         for batch_idx, data in enumerate(train_set):
             img, _ = data
             #img = img.view(img.size(0), -1)
-            img = Variable(img)
+            img = Variable(img.cuda())
             optimizer.zero_grad()
             print("image here",img.size()) # 64*64*3
             recon_batch, mu, logvar = model(img)
@@ -165,7 +182,7 @@ def train(batchsize):
             loss.backward()
             train_loss += loss.data[0]
             optimizer.step()
-            running_loss.append(loss.data[0])
+            #running_loss.append(loss.data[0])
             if batch_idx % 100 == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                     epoch,
@@ -181,8 +198,8 @@ def train(batchsize):
             epoch, train_loss / len(train_set.dataset)))
         if epoch % 10 == 0:
             save = to_img(recon_batch.cpu().data)
-            save_image(save, './vae_img/image_{}.png'.format(epoch))
-        log_value('recon_loss', np.average(running_loss),epoch)
+            save_image(save, './vae_img_cuda/image_{}.png'.format(epoch))
+        #log_value('recon_loss', np.average(running_loss),epoch)
     return model
 
 def load_model():
@@ -193,28 +210,38 @@ def save_model(model):
     torch.save(model.state_dict(), './vae.pth')
 
 def generate_image():
-    z = Variable(torch.FloatTensor(32).normal_(), requires_grad=True)
+    z = torch.FloatTensor(100,32).normal_()
     make_image(z,"generated-image")
 
 def make_image(z,name):
-    x = model.decode(Variable(z))
-    x = x.view(3,64,64)
-    img = x.data.numpy()
-    plt.imshow(img, cmap = 'gray', interpolation = 'nearest')
+    x = model.decode(Variable(z.cuda(), requires_grad = True))
+    x = x.view(100,3,64,64)
+    img = x.cpu().data.numpy()
+    i = randint(0,99)
+    img = img[i,:,:,:]
+    x1 = img[0,:,:]
+    x2 = img[1,:,:]
+    x3 = img[2,:,:]
+    #print(x1)
+    img_final = np.zeros([64,64,3])
+    img_final[:,:,0] = x1
+    img_final[:,:,1] = x2
+    img_final[:,:,2] = x3
+    #print("img2",img_final[:,:,0])
+    plt.imshow(img_final, interpolation = 'nearest')
     plt.savefig('./' + name + '.jpg')
-
 
 
 #############################################################################
 # TRAINING A NEW MODEL
-train(batchsize = batch_size)
-save_model(model)
+#train(batchsize = batch_size)
+#save_model(model)
 #############################################################################
 
 #############################################################################
 # LOADING EXISTING MODEL
-#load_model()
+load_model()
 #############################################################################
 
-#generate_image()
+generate_image()
 
