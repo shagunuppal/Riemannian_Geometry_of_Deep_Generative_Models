@@ -1,6 +1,4 @@
 import os, time, sys
-import matplotlib
-matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import itertools
 import pickle
@@ -14,12 +12,10 @@ from torch.autograd import Variable
 import argparse
 from torchvision import transforms
 from torchvision.utils import save_image
-from random import randint
-import numpy as np
-#from tensorboard_logger import configure, log_value
+from tensorboard_logger import configure, log_value
 
-#configure('logs/' + 'CelebA_loss')
-#log_value('recon_loss', 1.0, 0)
+configure('logs/' + 'CelebA_loss')
+log_value('recon_loss', 1.0, 0)
 
 ################################################################################################################################################################################
 
@@ -37,7 +33,7 @@ parser.add_argument('--log-interval', type=int, default=10, metavar='N',
 
 args = parser.parse_args()
 
-num_epochs = 100
+num_epochs = 1
 batch_size = 100
 learning_rate = 0.0002
 
@@ -104,14 +100,11 @@ class VAE(nn.Module):
         return (self.fc21(h5)), F.sigmoid(self.fc22(h5))
 
     def decode(self, z):
-        print("z",z.size())
-	h6 = F.elu(self.bn6(self.fc3(z)))
-        print("h6",h6.size())
+        h6 = F.elu(self.bn6(self.fc3(z)))
+        #print("h6",h6.size())
         h7 = F.elu(self.bn7(self.fc4(h6)))
-        print("h7",h7.size()[0])
-	ll = h7.size()[0]
-        print(ll)
-	h7 = h7.view(ll,64,2,2)
+        #print("h7",h7.size())
+        h7 = h7.view(100,64,2,2)
         h8 = F.elu(self.bn8(self.deconv1(h7))) 
         #print ("h8",h8.size())
         h9 = F.elu(self.bn9(self.deconv2(h8)))
@@ -166,17 +159,17 @@ def loss_function(recon_x, x, mu, logvar):
 
 
 def train(batchsize):
-    data_dir = 'data/resized_celebA/' # this path depends on your computer
+    data_dir = '../data/resized_celebA/' # this path depends on your computer
     dset = datasets.ImageFolder(data_dir, transform=transforms.ToTensor())
     train_set = torch.utils.data.DataLoader(dset, batch_size=batch_size, shuffle=True)
     
     for epoch in range(num_epochs):
-        #running_loss = []
+        running_loss = []
         model.train().cuda()
         train_loss = 0
         for batch_idx, data in enumerate(train_set):
             img, _ = data
-            #img = img.view(img.size(0), -1)
+            img = img.view(img.size(0), -1)
             img = Variable(img.cuda())
             optimizer.zero_grad()
             print("image here",img.size()) # 64*64*3
@@ -185,7 +178,7 @@ def train(batchsize):
             loss.backward()
             train_loss += loss.data[0]
             optimizer.step()
-            #running_loss.append(loss.data[0])
+            running_loss.append(loss.data[0])
             if batch_idx % 100 == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                     epoch,
@@ -202,7 +195,7 @@ def train(batchsize):
         if epoch % 10 == 0:
             save = to_img(recon_batch.cpu().data)
             save_image(save, './vae_img_cuda/image_{}.png'.format(epoch))
-        #log_value('recon_loss', np.average(running_loss),epoch)
+        log_value('recon_loss', np.average(running_loss),epoch)
     return model
 
 def load_model():
@@ -212,39 +205,16 @@ def load_model():
 def save_model(model):
     torch.save(model.state_dict(), './vae.pth')
 
-def generate_image():
-    z = torch.FloatTensor(100,32).normal_()
-    make_image(z,"generated-image")
-
-def make_image(z,name):
-    x = model.decode(Variable(z.cuda(), requires_grad = True))
-    x = x.view(100,3,64,64)
-    img = x.cpu().data.numpy()
-    i = randint(0,100)
-    img = img[i,:,:,:]
-    x1 = img[0,:,:]
-    x2 = img[1,:,:]
-    x3 = img[2,:,:]
-    #print(x1)
-    img_final = np.zeros([64,64,3])
-    img_final[:,:,0] = x1
-    img_final[:,:,1] = x2
-    img_final[:,:,2] = x3
-    #print("img2",img_final[:,:,0])
-    plt.imshow(img_final, interpolation = 'nearest')
-    plt.savefig('./' + name + '.jpg')
-
 
 #############################################################################
 # TRAINING A NEW MODEL
-#train(batchsize = batch_size)
-#save_model(model)
+train(batchsize = batch_size)
+save_model(model)
 #############################################################################
 
 #############################################################################
 # LOADING EXISTING MODEL
-load_model()
+#load_model()
 #############################################################################
 
-generate_image()
 

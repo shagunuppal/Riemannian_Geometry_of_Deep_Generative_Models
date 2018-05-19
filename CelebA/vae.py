@@ -12,22 +12,41 @@ from torch.autograd import Variable
 import argparse
 from torchvision import transforms
 from torchvision.utils import save_image
-from tensorboard_logger import configure, log_value
-import numpy as np
-
-configure('logs/' + 'CelebA_loss')
-log_value('recon_loss', 1.0, 0)
 
 ################################################################################################################################################################################
 
-num_epochs = 1
+# parser = argparse.ArgumentParser(description='VAE CelebA Example')
+# parser.add_argument('--batch-size', type=int, default=100, metavar='N',
+#                     help='input batch size for training (default: 100)')
+# parser.add_argument('--epochs', type=int, default=10, metavar='N',
+#                     help='number of epochs to train (default: 10)')
+# parser.add_argument('--no-cuda', action='store_true', default=False,
+#                     help='enables CUDA training')
+# parser.add_argument('--seed', type=int, default=1, metavar='S',
+#                     help='random seed (default: 1)')
+# parser.add_argument('--log-interval', type=int, default=10, metavar='N',
+#                     help='how many batches to wait before logging training status')
+# args = parser.parse_args()
+# args.cuda = not args.no_cuda and torch.cuda.is_available()
+
+
+# torch.manual_seed(args.seed)
+
+# #device = torch.device("cuda" if args.cuda else "cpu")
+# if (args.cuda):
+#     device = torch.cuda.device()
+# else:
+#     device = 
+# kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
+
+num_epochs = 100
 batch_size = 100
 learning_rate = 0.0002
 
 mean = Variable(torch.zeros(100,32))
 log_variance = Variable(torch.zeros(100,32))
 
-img_transform = transforms.Compose([transforms.ToTensor()])
+mg_transform = transforms.Compose([transforms.ToTensor()])
 
 if not os.path.exists('./vae_img'):
     os.mkdir('./vae_img')
@@ -89,9 +108,9 @@ class VAE(nn.Module):
     def decode(self, z):
         h6 = F.elu(self.bn6(self.fc3(z)))
         #print("h6",h6.size())
-        h7 = F.elu(self.bn7(self.fc4(h6)))
+	h7 = F.elu(self.bn7(self.fc4(h6)))
         #print("h7",h7.size())
-        h7 = h7.view(100,64,2,2)
+	h7 = h7.view(100,64,2,2)
         h8 = F.elu(self.bn8(self.deconv1(h7))) 
         #print ("h8",h8.size())
         h9 = F.elu(self.bn9(self.deconv2(h8)))
@@ -126,9 +145,6 @@ class VAE(nn.Module):
             num_features *= s
         return num_features
 
-model = VAE()
-optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-reconstruction_function = nn.MSELoss(size_average=False)
 
 def loss_function(recon_x, x, mu, logvar):
     """
@@ -146,12 +162,12 @@ def loss_function(recon_x, x, mu, logvar):
 
 
 def train(batchsize):
+    #train_set = torch.utils.data.DataLoader(datasets.MNIST('./data',train=True,download=True,transform=transforms.ToTensor()),batch_size=batchsize, shuffle=True)
     data_dir = 'data/resized_celebA/' # this path depends on your computer
     dset = datasets.ImageFolder(data_dir, transform=transforms.ToTensor())
-    train_set = torch.utils.data.DataLoader(dset, batch_size=batch_size, shuffle=True)
+    train_set = torch.utils.data.DataLoader(dset, batch_size=batch_size, shuffle=True)#, **kwargs)
     
     for epoch in range(num_epochs):
-        running_loss = []
         model.train()
         train_loss = 0
         for batch_idx, data in enumerate(train_set):
@@ -165,7 +181,6 @@ def train(batchsize):
             loss.backward()
             train_loss += loss.data[0]
             optimizer.step()
-            running_loss.append(loss.data[0])
             if batch_idx % 100 == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                     epoch,
@@ -182,7 +197,6 @@ def train(batchsize):
         if epoch % 10 == 0:
             save = to_img(recon_batch.cpu().data)
             save_image(save, './vae_img/image_{}.png'.format(epoch))
-        log_value('recon_loss', np.average(running_loss),epoch)
     return model
 
 def load_model():
@@ -192,23 +206,11 @@ def load_model():
 def save_model(model):
     torch.save(model.state_dict(), './vae.pth')
 
-def generate_image():
-    z = Variable(torch.FloatTensor(32).normal_(), requires_grad=True)
-    make_image(z,"generated-image")
-
-def make_image(z,name):
-    x = model.decode(Variable(z))
-    x = x.view(3,64,64)
-    img = x.data.numpy()
-    plt.imshow(img, cmap = 'gray', interpolation = 'nearest')
-    plt.savefig('./' + name + '.jpg')
-
-
 
 #############################################################################
 # TRAINING A NEW MODEL
-train(batchsize = batch_size)
-save_model(model)
+# train(batchsize = batch_size)
+# save_model(model)
 #############################################################################
 
 #############################################################################
@@ -216,5 +218,13 @@ save_model(model)
 #load_model()
 #############################################################################
 
-#generate_image()
+if __name__ == '__main__':
+    model = VAE()
+    #model.cuda()
+
+    reconstruction_function = nn.MSELoss(size_average=False)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+
+    train(batchsize = batch_size)
+    save_model(model)
 
