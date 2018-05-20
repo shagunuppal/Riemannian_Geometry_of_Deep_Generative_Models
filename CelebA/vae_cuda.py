@@ -37,7 +37,7 @@ parser.add_argument('--log-interval', type=int, default=10, metavar='N',
 
 args = parser.parse_args()
 
-num_epochs = 100
+num_epochs = 1
 batch_size = 100
 learning_rate = 0.0002
 
@@ -90,38 +90,34 @@ class VAE(nn.Module):
 
     def encode(self, x):
         h1 = F.elu(self.bn1(self.conv1(x)))
-        #print("h1:",h1.size())
+        print("h1:",h1.size())
         h2 = F.elu(self.bn2(self.conv2(h1)))
-        #print("h2:",h2.size())
+        print("h2:",h2.size())
         h3 = F.elu(self.bn3(self.conv3(h2)))
-        #print("h3:",h3.size())
+        print("h3:",h3.size())
         h4 = F.elu(self.bn4(self.conv4(h3)))
-        #print("h4:",h4.size())
+        print("h4:",h4.size())
         h4 = h4.view(-1, self.num_flat_features(h4))
-        #print("h4",h4.size())
+        print("h4",h4.size())
         h5 = F.elu(self.fc1(h4))
-        #print("h5",h5.size())
+        print("h5",h5.size())
         return (self.fc21(h5)), F.sigmoid(self.fc22(h5))
 
     def decode(self, z):
-        print("z",z.size())
+        #print("z",z.size())
 	h6 = F.elu(self.bn6(self.fc3(z)))
-        print("h6",h6.size())
+        #print("h6",h6.size())
         h7 = F.elu(self.bn7(self.fc4(h6)))
-        print("h7",h7.size()[0])
-	ll = h7.size()[0]
-        print(ll)
-	h7 = h7.view(ll,64,2,2)
+        #print("h7",h7.size()[0])
+	#ll = h7.size()[0]
+        #print(ll)
+	h7 = h7.view(h7.size()[0],64,2,2)
         h8 = F.elu(self.bn8(self.deconv1(h7))) 
         #print ("h8",h8.size())
         h9 = F.elu(self.bn9(self.deconv2(h8)))
         #print ("h9",h9.size())
         h10 = F.elu(self.bn10(self.deconv3(h9)))
-        #print("h10",h10.size())
         h11 = (self.deconv4(h10))
-        #print ("h11",h11.size())
-        #h12 = self.deconv5(h11)
-        #print ("h12",h12.size())
         return h11
 
     def reparametrize(self, mu, logvar):
@@ -216,12 +212,12 @@ def generate_image():
     z = torch.FloatTensor(100,32).normal_()
     make_image(z,"generated-image")
 
-def make_image(z,name):
-    x = model.decode(Variable(z.cuda(), requires_grad = True))
-    x = x.view(100,3,64,64)
+def make_image(model,z,name):
+    x = model.decode(Variable(z.data.cuda(), requires_grad = True))
+    x = x.view(3,64,64)
     img = x.cpu().data.numpy()
-    i = randint(0,100)
-    img = img[i,:,:,:]
+    #i = randint(0,100)
+    #img = img[:,:,:]
     x1 = img[0,:,:]
     x2 = img[1,:,:]
     x3 = img[2,:,:]
@@ -246,5 +242,5 @@ def make_image(z,name):
 load_model()
 #############################################################################
 
-generate_image()
+#generate_image()
 

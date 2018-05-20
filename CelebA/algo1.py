@@ -34,11 +34,11 @@ except AttributeError:
 
 
 model = load_model()
-T = 10
+T = 4
 dt = 1.0 / T
-epsilon = 2500
+epsilon = 500
 z_collection = []
-delta_e = torch.FloatTensor(32,64*64*3).zero_()
+delta_e = torch.FloatTensor(32,64*64*3).zero_().cuda()
 
 def find_mod1(x):
     # x is float tensor
@@ -66,53 +66,64 @@ def linear_interpolation(model,z0, zt):
 	#print("arc_length"+(str)(T-1),arc_length(model, z_collection[len(z_collection)-2],z_collection[len(z_collection)-1])) 
 
 def find_jacobian(model, z1): #Jh
-	print("bvfkngklmhjml",z1)
-	z = z1
-	dec = Variable(model.decode(z).data, requires_grad=True)
+	#print("bvfkngklmhjml",z1)
+	z = Variable(z1.view(1,32).data.cuda(), requires_grad=True)
+	dec = Variable(model.decode(z).data.cuda(), requires_grad=True)
 	enc1, enc2 = model.encode(dec)
-	jacobian = torch.FloatTensor(20,784).zero_()
-	for j in range(20):
-		f = torch.FloatTensor(20).zero_()
+	enc1 = enc1.view(32)
+	print("enc1",dec.size())
+	jacobian = torch.FloatTensor(32,3*64*64).zero_().cuda()
+	for j in range(32):
+		f = torch.FloatTensor(32).zero_().cuda()
 		f[j] = 1	
 		enc1.backward(f, retain_graph=True)
-		jacobian[j,:] = dec.grad.data
-		dec.grad.data.zero_()
+		jacobian[j,:] = dec.grad.data.cuda()
+		#print(jacobian[j,:])
+		dec.grad.data.zero_().cuda()
+	print("jaco",jacobian)
 	return jacobian
 
 def find_jacobian_1(model, z1): #Jg
-	print("dbskmv",z1)
-	z = z1.view(1,32)
-	print("jacobian",z.size())
+	z = Variable(z1.view(1,32).data.cuda(), requires_grad=True)
 	dec = model.decode(z)
-	print ("type",type(z))
-	jacobian = torch.FloatTensor(64*64*3,32).zero_()
+	dec =dec.view(64*64*3)
+	jacobian = torch.FloatTensor(64*64*3,32).zero_().cuda()
 	for j in range(64*64*3):
-		f = torch.FloatTensor(64*64*3).zero_().cuda()
+		f = torch.FloatTensor(64*64*3).zero_().cuda()	
 		f[j] = 1	
 		dec.backward(f, retain_graph=True)
-		jacobian[j,:] = z.grad.data
-		z.grad.data.zero_()
+		jacobian[j,:] = z.grad.data.cuda()
+		z.grad.data.zero_().cuda()
+	print("algo1_jacobian",jacobian)
 	return jacobian
 
 
 def find_energy(model,z0, z1, z2):
-	a11 = find_jacobian_1(model,Variable(z1.data, requires_grad=True))
-	a1 = torch.transpose(find_jacobian_1(model,Variable(z1, requires_grad=True)),0,1)
-	a2 = ((model.decode(Variable(z2)) - 2*model.decode(Variable(z1))+model.decode(Variable(z0))).data).view(64*64*3,1)
+	print("z1",z1)
+	#find_jacobian(model, z1)
+	a11 = find_jacobian_1(model, z1)
+	a1 = torch.transpose(find_jacobian_1(model,Variable(z1.data.view(1,32), requires_grad=True)),0,1)
+	a2 = ((model.decode(Variable(z2.data.view(1,32))) - 2*model.decode(Variable(z1.data.view(1,32)))+model.decode(Variable(z0.data.view(1,32)))).data).view(64*64*3,1)
 	e = -(1 / dt)*(torch.mm(a1,a2))
+	# print(type(e))
+	# print("a11",a11)
+	# print("a1",a1)
+	# print("a2",a2)
+	# print("e",e)
 	return e
 
 def find_etta_i(model,z0,z1,z2):
 	dt = 1/T
-	z0 = z0.view(20)
-	z1 = z1.view(20)
-	z2 = z2.view(20)
+	z0 = z0.view(32)
+	z1 = z1.view(32)
+	z2 = z2.view(32)
+	print("here")
 	a1 = find_jacobian(model,Variable(z1))
 	x1 = model.decode(Variable(z2))
 	x2 = 2*model.decode(Variable(z1))
 	x3 = model.decode(Variable(z0))
 	a21 = (x1-x2+x3).data
-	a2 = a21.view(784,1)
+	a2 = a21.view(3*64*64,1)
 	e = -(1 / dt)*torch.mm(a1,a2)
 	return e
 
@@ -145,18 +156,18 @@ def sum_energy(model):
 	return multi
 
 def sum_energy_1(model):
-	delta_e = torch.FloatTensor(32,1).zero_()
+	delta_e = torch.FloatTensor(32,1).zero_().cuda()
 	for i in range(1,T-2):
 		delta_e += find_energy(model,z_collection[i-1].view(32),z_collection[i].view(32),z_collection[i+1].view(32))
-	return find_mod1(delta_e)
+	return find_mod1(Variable(delta_e))
 
-def make_image(model,z,name):
-	x = model.decode(Variable(z))
-	#print("decoded",x)
-	x = x.view(28,28)
-	img = x.data.numpy()
-	plt.imshow(img, cmap = 'gray', interpolation = 'nearest')
-	plt.savefig('./' + name + '.jpg')
+'''def make_image(model,z,name):
+	x = model.decode(Variable(z.data))
+	print("decoded",x)
+	x = x.view(3,64,64)
+	img = x.data.cpu().numpy()
+	plt.imshow(img, interpolation = 'nearest')
+	plt.savefig('./' + name + '.jpg')'''
 
 def arc_length(model, z1, z2):
 	xx = 0 
@@ -177,16 +188,18 @@ def main1(model,z0,zt):
 	#print("distance_ends:",y)
 	linear_interpolation(model,z0,zt)
 	#print("geodesic_ends:",geodesic_length(model, z_collection))
+	print(sum_energy_1(model))
 	while (sum_energy_1(model) > epsilon):
 	 	print(sum_energy_1(model))
-	# 	for i in range(1,T-1):
-	# 		etta_i = find_etta_i(model, z_collection[i-1], z_collection[i], z_collection[i+1])
-	# 		e1 = step_size*etta_i
-	# 		z_collection[i] = z_collection[i].view(20,1)
-	# 		z_collection[i] = z_collection[i] - e1
-	# for p in range(T):
-	# 	make_image(model,z=z_collection[p].view(20),name=str(p))
-	# return z_collection
+		for i in range(1,T-1):
+			print("first")
+	 		etta_i = find_etta_i(model, z_collection[i-1], z_collection[i], z_collection[i+1])
+	 		e1 = step_size*etta_i
+	 		z_collection[i] = z_collection[i].view(32,1)
+	 		z_collection[i] = z_collection[i] - e1
+	for p in range(T):
+	 	make_image(model,z=z_collection[p].view(1,32),name=str(p))
+	return z_collection
 
 
 z0 = Variable(torch.FloatTensor(1,32).normal_().cuda(), requires_grad=True)
