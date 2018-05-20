@@ -1,4 +1,6 @@
 import os, time, sys
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import itertools
 import pickle
@@ -12,13 +14,19 @@ from torch.autograd import Variable
 import argparse
 from torchvision import transforms
 from torchvision.utils import save_image
+from random import randint
+import numpy as np
+#from tensorboard_logger import configure, log_value
+
+#configure('logs/' + 'CelebA_loss')
+#log_value('recon_loss', 1.0, 0)
 
 ################################################################################################################################################################################
 
 # parser = argparse.ArgumentParser(description='VAE CelebA Example')
 # parser.add_argument('--batch-size', type=int, default=100, metavar='N',
-#                     help='input batch size for training (default: 100)')
-# parser.add_argument('--epochs', type=int, default=10, metavar='N',
+#                     help='input batch size for training (default: 128)')
+# parser.add_argument('--epochs', type=int, default=1, metavar='N',
 #                     help='number of epochs to train (default: 10)')
 # parser.add_argument('--no-cuda', action='store_true', default=False,
 #                     help='enables CUDA training')
@@ -26,20 +34,10 @@ from torchvision.utils import save_image
 #                     help='random seed (default: 1)')
 # parser.add_argument('--log-interval', type=int, default=10, metavar='N',
 #                     help='how many batches to wait before logging training status')
-# args = parser.parse_args()
-# args.cuda = not args.no_cuda and torch.cuda.is_available()
 
+#args = parser.parse_args()
 
-# torch.manual_seed(args.seed)
-
-# #device = torch.device("cuda" if args.cuda else "cpu")
-# if (args.cuda):
-#     device = torch.cuda.device()
-# else:
-#     device = 
-# kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
-
-num_epochs = 100
+num_epochs = 1
 batch_size = 100
 learning_rate = 0.0002
 
@@ -92,35 +90,34 @@ class VAE(nn.Module):
 
     def encode(self, x):
         h1 = F.elu(self.bn1(self.conv1(x)))
-        #print("h1:",h1.size())
+        print("h1:",h1.size())
         h2 = F.elu(self.bn2(self.conv2(h1)))
-        #print("h2:",h2.size())
+        print("h2:",h2.size())
         h3 = F.elu(self.bn3(self.conv3(h2)))
-        #print("h3:",h3.size())
+        print("h3:",h3.size())
         h4 = F.elu(self.bn4(self.conv4(h3)))
-        #print("h4:",h4.size())
+        print("h4:",h4.size())
         h4 = h4.view(-1, self.num_flat_features(h4))
-        #print("h4",h4.size())
+        print("h4",h4.size())
         h5 = F.elu(self.fc1(h4))
-        #print("h5",h5.size())
+        print("h5",h5.size())
         return (self.fc21(h5)), F.sigmoid(self.fc22(h5))
 
     def decode(self, z):
+        #print("z",z.size())
         h6 = F.elu(self.bn6(self.fc3(z)))
         #print("h6",h6.size())
-	h7 = F.elu(self.bn7(self.fc4(h6)))
-        #print("h7",h7.size())
-	h7 = h7.view(100,64,2,2)
+        h7 = F.elu(self.bn7(self.fc4(h6)))
+        #print("h7",h7.size()[0])
+        #ll = h7.size()[0]
+        #print(ll)
+        h7 = h7.view(h7.size()[0],64,2,2)
         h8 = F.elu(self.bn8(self.deconv1(h7))) 
         #print ("h8",h8.size())
         h9 = F.elu(self.bn9(self.deconv2(h8)))
         #print ("h9",h9.size())
         h10 = F.elu(self.bn10(self.deconv3(h9)))
-        #print("h10",h10.size())
         h11 = (self.deconv4(h10))
-        #print ("h11",h11.size())
-        #h12 = self.deconv5(h11)
-        #print ("h12",h12.size())
         return h11
 
     def reparametrize(self, mu, logvar):
@@ -145,6 +142,9 @@ class VAE(nn.Module):
             num_features *= s
         return num_features
 
+model = VAE()
+optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+reconstruction_function = nn.MSELoss(size_average=False)
 
 def loss_function(recon_x, x, mu, logvar):
     """
@@ -162,12 +162,12 @@ def loss_function(recon_x, x, mu, logvar):
 
 
 def train(batchsize):
-    #train_set = torch.utils.data.DataLoader(datasets.MNIST('./data',train=True,download=True,transform=transforms.ToTensor()),batch_size=batchsize, shuffle=True)
     data_dir = 'data/resized_celebA/' # this path depends on your computer
     dset = datasets.ImageFolder(data_dir, transform=transforms.ToTensor())
-    train_set = torch.utils.data.DataLoader(dset, batch_size=batch_size, shuffle=True)#, **kwargs)
+    train_set = torch.utils.data.DataLoader(dset, batch_size=batch_size, shuffle=True)
     
     for epoch in range(num_epochs):
+        #running_loss = []
         model.train()
         train_loss = 0
         for batch_idx, data in enumerate(train_set):
@@ -175,12 +175,13 @@ def train(batchsize):
             #img = img.view(img.size(0), -1)
             img = Variable(img)
             optimizer.zero_grad()
-            print("image here",img.size()) # 64*64*3
+            #print("image here",img.size()) # 64*64*3
             recon_batch, mu, logvar = model(img)
             loss = loss_function(recon_batch, img, mu, logvar)
             loss.backward()
             train_loss += loss.data[0]
             optimizer.step()
+            #running_loss.append(loss.data[0])
             if batch_idx % 100 == 0:
                 print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                     epoch,
@@ -195,8 +196,9 @@ def train(batchsize):
         print('====> Epoch: {} Average loss: {:.4f}'.format(
             epoch, train_loss / len(train_set.dataset)))
         if epoch % 10 == 0:
-            save = to_img(recon_batch.cpu().data)
+            save = to_img(recon_batch.data)
             save_image(save, './vae_img/image_{}.png'.format(epoch))
+        #log_value('recon_loss', np.average(running_loss),epoch)
     return model
 
 def load_model():
@@ -206,11 +208,33 @@ def load_model():
 def save_model(model):
     torch.save(model.state_dict(), './vae.pth')
 
+def generate_image():
+    z = torch.FloatTensor(100,32).normal_()
+    make_image(z,"generated-image")
+
+def make_image(model,z,name):
+    x = model.decode(Variable(z.data, requires_grad = True))
+    x = x.view(3,64,64)
+    img = x.data.numpy()
+    #i = randint(0,100)
+    #img = img[:,:,:]
+    x1 = img[0,:,:]
+    x2 = img[1,:,:]
+    x3 = img[2,:,:]
+    #print(x1)
+    img_final = np.zeros([64,64,3])
+    img_final[:,:,0] = x1
+    img_final[:,:,1] = x2
+    img_final[:,:,2] = x3
+    #print("img2",img_final[:,:,0])
+    plt.imshow(img_final, interpolation = 'nearest')
+    plt.savefig('./' + name + '.jpg')
+
 
 #############################################################################
 # TRAINING A NEW MODEL
-# train(batchsize = batch_size)
-# save_model(model)
+train(batchsize = batch_size)
+save_model(model)
 #############################################################################
 
 #############################################################################
@@ -218,13 +242,5 @@ def save_model(model):
 #load_model()
 #############################################################################
 
-if __name__ == '__main__':
-    model = VAE()
-    #model.cuda()
-
-    reconstruction_function = nn.MSELoss(size_average=False)
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-
-    train(batchsize = batch_size)
-    save_model(model)
+#generate_image()
 
