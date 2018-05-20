@@ -65,6 +65,7 @@ class VAE(nn.Module):
 
 	def encode(self, x):
 		# h
+		print("encode",x.size())
 		h11 = F.relu(self.fc1(x))
 		h1 = F.relu(self.fc11(h11))
 		return self.fc21(h1), self.fc22(h1)
@@ -122,6 +123,7 @@ def train(batchsize):
 		train_loss = 0
 		for batch_idx, data in enumerate(train_set):
 			img, _ = data
+			print("batch",img.size())
 			img = img.view(img.size(0), -1)
 			img = Variable(img)
 			optimizer.zero_grad()
@@ -181,7 +183,9 @@ def find_jacobian(model, z1): #Jh
 
 def find_jacobian_1(model, z1): #Jg
 	z = z1
+	print("z",z)
 	dec = model.decode(z)
+	print("dec",dec)
 	jacobian = torch.FloatTensor(784,20).zero_()
 	for j in range(784):
 		f = torch.FloatTensor(784).zero_()
@@ -198,7 +202,7 @@ z_collection = []
 delta_e = torch.FloatTensor(20,784).zero_()
 
 def find_energy(model,z0, z1, z2):
-	a11 = find_jacobian_1(model,Variable(z1, requires_grad=True))
+	a11 = find_jacobian_1(model,Variable(z1.data, requires_grad=True))
 	a1 = torch.transpose(find_jacobian_1(model,Variable(z1, requires_grad=True)),0,1)
 	a2 = ((model.decode(Variable(z2)) - 2*model.decode(Variable(z1))+model.decode(Variable(z0))).data).view(784,1)
 	e = -(1 / dt)*(torch.mm(a1,a2))
@@ -291,7 +295,7 @@ def main1(model,z0,zt):
 
 #############################################################################
 # TRAINING A NEW MODEL
-#train(batchsize = batch_size)
+train(batchsize = batch_size)
 #save_model(model)
 #############################################################################
 
@@ -303,7 +307,7 @@ def main1(model,z0,zt):
 z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 zt = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 
-#main1(model=model,z0=z0, zt=zt)
+main1(model=model,z0=z0, zt=zt)
 
 
 	
