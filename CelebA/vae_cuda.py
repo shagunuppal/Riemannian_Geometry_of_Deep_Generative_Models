@@ -44,7 +44,7 @@ learning_rate = 0.0002
 mean = Variable(torch.zeros(100,32).cuda())
 log_variance = Variable(torch.zeros(100,32).cuda())
 
-mg_transform = transforms.Compose([transforms.ToTensor()])
+img_transform = transforms.Compose([transforms.ToTensor()])
 
 if not os.path.exists('./vae_img_cuda'):
     os.mkdir('./vae_img_cuda')
@@ -55,94 +55,106 @@ def to_img(x):
     return x
 
 class VAE(nn.Module):
-    def __init__(self):
+    def __init__(self, nc, ngf, ndf, latent_variable_size):
         super(VAE, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels=3, out_channels=32, kernel_size=4, stride=2, padding=0)
-        self.bn1 = nn.BatchNorm2d(32)
-        self.conv2 = nn.Conv2d(in_channels=32, out_channels=32, kernel_size=4, stride=2, padding=0)
-        self.bn2 = nn.BatchNorm2d(32)
-        self.conv3 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=4, stride=2, padding=0)
-        self.bn3 = nn.BatchNorm2d(64)
-        self.conv4 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=4, stride=2, padding=0)
-        self.bn4 = nn.BatchNorm2d(64)
-        self.fc1 = nn.Linear(64*2*2,256)
-        self.bn5 = nn.BatchNorm1d(256)
 
-        self.fc21 = nn.Linear(256,32) # for mean
-        self.fc22 = nn.Linear(256,32) # for standard deviation
-        
-        ###################################################################
-        
-        self.fc3 = nn.Linear(32, 256)
-        self.bn6 = nn.BatchNorm1d(256)
-        self.fc4 = nn.Linear(256, 64*2*2)
-        self.bn7 = nn.BatchNorm1d(64*2*2)
-        self.deconv1 = nn.ConvTranspose2d(64, 64, kernel_size=4, stride=2, padding=0)
-        self.bn8 = nn.BatchNorm2d(64)
-        self.deconv2 = nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=0)
-        self.bn9 = nn.BatchNorm2d(32)
-        self.deconv3 = nn.ConvTranspose2d(32, 32, kernel_size=5, stride=2, padding=0)
-        self.bn10 = nn.BatchNorm2d(32)
-        self.deconv4 = nn.ConvTranspose2d(32, 3, kernel_size=4, stride=2, padding=0)
-        # additional 
-        # self.bn11 = nn.BatchNorm2d(3)
-        # self.deconv5 = nn.ConvTranspose2d(3, 3, kernel_size=4, stride=2, padding=0)
+        self.nc = nc
+        self.ngf = ngf
+        self.ndf = ndf
+        self.latent_variable_size = latent_variable_size
+
+        # encoder
+        self.e1 = nn.Conv2d(nc, ndf, 4, 2, 1)
+        self.bn1 = nn.BatchNorm2d(ndf)
+
+        self.e2 = nn.Conv2d(ndf, ndf*2, 4, 2, 1)
+        self.bn2 = nn.BatchNorm2d(ndf*2)
+
+        self.e3 = nn.Conv2d(ndf*2, ndf*4, 4, 2, 1)
+        self.bn3 = nn.BatchNorm2d(ndf*4)
+
+        self.e4 = nn.Conv2d(ndf*4, ndf*8, 4, 2, 1)
+        self.bn4 = nn.BatchNorm2d(ndf*8)
+
+        self.e5 = nn.Conv2d(ndf*8, ndf*8, 4, 2, 1)
+        self.bn5 = nn.BatchNorm2d(ndf*8)
+
+        self.fc1 = nn.Linear(ndf*8*4*4, latent_variable_size)
+        self.fc2 = nn.Linear(ndf*8*4*4, latent_variable_size)
+
+        # decoder
+        self.d1 = nn.Linear(latent_variable_size, ngf*8*2*4*4)
+
+        self.up1 = nn.UpsamplingNearest2d(scale_factor=2)
+        self.pd1 = nn.ReplicationPad2d(1)
+        self.d2 = nn.Conv2d(ngf*8*2, ngf*8, 3, 1)
+        self.bn6 = nn.BatchNorm2d(ngf*8, 1.e-3)
+
+        self.up2 = nn.UpsamplingNearest2d(scale_factor=2)
+        self.pd2 = nn.ReplicationPad2d(1)
+        self.d3 = nn.Conv2d(ngf*8, ngf*4, 3, 1)
+        self.bn7 = nn.BatchNorm2d(ngf*4, 1.e-3)
+
+        self.up3 = nn.UpsamplingNearest2d(scale_factor=2)
+        self.pd3 = nn.ReplicationPad2d(1)
+        self.d4 = nn.Conv2d(ngf*4, ngf*2, 3, 1)
+        self.bn8 = nn.BatchNorm2d(ngf*2, 1.e-3)
+
+        self.up4 = nn.UpsamplingNearest2d(scale_factor=2)
+        self.pd4 = nn.ReplicationPad2d(1)
+        self.d5 = nn.Conv2d(ngf*2, ngf, 3, 1)
+        self.bn9 = nn.BatchNorm2d(ngf, 1.e-3)
+
+        self.up5 = nn.UpsamplingNearest2d(scale_factor=2)
+        self.pd5 = nn.ReplicationPad2d(1)
+        self.d6 = nn.Conv2d(ngf, nc, 3, 1)
+
+        self.leakyrelu = nn.LeakyReLU(0.2)
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
 
     def encode(self, x):
-        h1 = F.elu(self.bn1(self.conv1(x)))
-        print("h1:",h1.size())
-        h2 = F.elu(self.bn2(self.conv2(h1)))
-        print("h2:",h2.size())
-        h3 = F.elu(self.bn3(self.conv3(h2)))
-        print("h3:",h3.size())
-        h4 = F.elu(self.bn4(self.conv4(h3)))
-        print("h4:",h4.size())
-        h4 = h4.view(-1, self.num_flat_features(h4))
-        print("h4",h4.size())
-        h5 = F.elu(self.fc1(h4))
-        print("h5",h5.size())
-        return (self.fc21(h5)), F.sigmoid(self.fc22(h5))
+        h1 = self.leakyrelu(self.bn1(self.e1(x)))
+        h2 = self.leakyrelu(self.bn2(self.e2(h1)))
+        h3 = self.leakyrelu(self.bn3(self.e3(h2)))
+        h4 = self.leakyrelu(self.bn4(self.e4(h3)))
+        h5 = self.leakyrelu(self.bn5(self.e5(h4)))
+        h5 = h5.view(-1, self.ndf*8*4*4)
 
-    def decode(self, z):
-        #print("z",z.size())
-	h6 = F.elu(self.bn6(self.fc3(z)))
-        #print("h6",h6.size())
-        h7 = F.elu(self.bn7(self.fc4(h6)))
-        #print("h7",h7.size()[0])
-	#ll = h7.size()[0]
-        #print(ll)
-	h7 = h7.view(h7.size()[0],64,2,2)
-        h8 = F.elu(self.bn8(self.deconv1(h7))) 
-        #print ("h8",h8.size())
-        h9 = F.elu(self.bn9(self.deconv2(h8)))
-        #print ("h9",h9.size())
-        h10 = F.elu(self.bn10(self.deconv3(h9)))
-        h11 = (self.deconv4(h10))
-        return h11
+        return self.fc1(h5), self.fc2(h5)
 
     def reparametrize(self, mu, logvar):
         std = logvar.mul(0.5).exp_()
-        eps = torch.FloatTensor(std.size()).normal_()
-        eps = Variable(eps.cuda())
-        return eps.mul(std).add_(mu) 
+        if args.cuda:
+            eps = torch.cuda.FloatTensor(std.size()).normal_()
+        else:
+            eps = torch.FloatTensor(std.size()).normal_()
+        eps = Variable(eps)
+        return eps.mul(std).add_(mu)
+
+    def decode(self, z):
+        h1 = self.relu(self.d1(z))
+        h1 = h1.view(-1, self.ngf*8*2, 4, 4)
+        h2 = self.leakyrelu(self.bn6(self.d2(self.pd1(self.up1(h1)))))
+        h3 = self.leakyrelu(self.bn7(self.d3(self.pd2(self.up2(h2)))))
+        h4 = self.leakyrelu(self.bn8(self.d4(self.pd3(self.up3(h3)))))
+        h5 = self.leakyrelu(self.bn9(self.d5(self.pd4(self.up4(h4)))))
+
+        return self.sigmoid(self.d6(self.pd5(self.up5(h5))))
+
+    def get_latent_var(self, x):
+        mu, logvar = self.encode(x.view(-1, self.nc, self.ndf, self.ngf))
+        z = self.reparametrize(mu, logvar)
+        return z
 
     def forward(self, x):
-        global mean
-        global log_variance
-        mu, logvar = self.encode(x)
-        mean = mu
-        log_variance = logvar
+        mu, logvar = self.encode(x.view(-1, self.nc, self.ndf, self.ngf))
         z = self.reparametrize(mu, logvar)
-        return self.decode(z), mu, logvar
+        res = self.decode(z)
+        return res, mu, logvar
 
-    def num_flat_features(self, x):
-        size = x.size()[1:]  # all dimensions except the batch dimension
-        num_features = 1
-        for s in size:       # Get the products
-            num_features *= s
-        return num_features
 
-model = VAE().cuda()
+model = VAE(nc=3, ngf=128, ndf=128, latent_variable_size=500)
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 reconstruction_function = nn.MSELoss(size_average=False)
 
@@ -233,8 +245,8 @@ def make_image(model,z,name):
 
 #############################################################################
 # TRAINING A NEW MODEL
-#train(batchsize = batch_size)
-#save_model(model)
+train(batchsize = batch_size)
+save_model(model)
 #############################################################################
 
 #############################################################################

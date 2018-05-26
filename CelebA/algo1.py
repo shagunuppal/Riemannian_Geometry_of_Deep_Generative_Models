@@ -66,7 +66,6 @@ def linear_interpolation(model,z0, zt):
 	#print("arc_length"+(str)(T-1),arc_length(model, z_collection[len(z_collection)-2],z_collection[len(z_collection)-1])) 
 
 def find_jacobian(model, z1): #Jh
-	#print("bvfkngklmhjml",z1)
 	z = Variable(z1.view(1,32).data.cuda(), requires_grad=True)
 	dec = Variable(model.decode(z).data.cuda(), requires_grad=True)
 	enc1, enc2 = model.encode(dec)

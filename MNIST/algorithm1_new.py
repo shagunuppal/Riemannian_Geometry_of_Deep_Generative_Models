@@ -1,5 +1,6 @@
 # Algorithm 1 : Geodesic Path
 
+from tensorboard_logger import configure, log_value
 import torch
 import torchvision
 from torch import nn
@@ -21,6 +22,9 @@ import sys, os
 import math
 
 from distance import *
+
+configure('./logs/' + 'algo1_new')
+log_value('recon_loss', 1.0, 0)
 
 import torch._utils
 try:
@@ -65,7 +69,7 @@ class VAE(nn.Module):
 
 	def encode(self, x):
 		# h
-		print("encode",x.size())
+		#print("encode",x.size())
 		h11 = F.relu(self.fc1(x))
 		h1 = F.relu(self.fc11(h11))
 		return self.fc21(h1), self.fc22(h1)
@@ -121,9 +125,10 @@ def train(batchsize):
 	for epoch in range(num_epochs):
 		model.train()
 		train_loss = 0
+		running_loss = []
 		for batch_idx, data in enumerate(train_set):
 			img, _ = data
-			print("batch",img.size())
+			#print("batch",img.size())
 			img = img.view(img.size(0), -1)
 			img = Variable(img)
 			optimizer.zero_grad()
@@ -139,7 +144,7 @@ def train(batchsize):
 					len(train_set.dataset), 
 					100. * batch_idx / len(train_set),
 					loss.data[0] / len(img)))
-
+			running_loss.append(loss.data[0])
 			########################################
 			#array.append([epoch, loss.data[0] / len(img), 100. * batch_idx / len(train_set)])
 				# epoch, loss, percentage
@@ -148,6 +153,7 @@ def train(batchsize):
 		if epoch % 10 == 0:
 			save = to_img(recon_batch.cpu().data)
 			save_image(save, './vae_img/image_{}.png'.format(epoch))
+		log_value('recon_loss',np.average(running_loss), epoch)
 	return model
 
 def load_model():
@@ -162,11 +168,11 @@ def linear_interpolation(model,z0, zt):
 	for i in range(T-2):
 		z0n = z_collection[len(z_collection)-1] + (zt-z0)*dt
 		z_collection.append(z0n)
-		print("distance_"+(str)(i+1),linear_distance(z_collection[len(z_collection)-2],z_collection[len(z_collection)-1])) 
-		print("arclength_"+(str)(i+1),arc_length(model, z_collection[len(z_collection)-2],z_collection[len(z_collection)-1]))   
+		#print("distance_"+(str)(i+1),linear_distance(z_collection[len(z_collection)-2],z_collection[len(z_collection)-1])) 
+		#print("arclength_"+(str)(i+1),arc_length(model, z_collection[len(z_collection)-2],z_collection[len(z_collection)-1]))   
 	z_collection.append(zt) 
-	print("distance_"+(str)(T-1),linear_distance(z_collection[len(z_collection)-2],z_collection[len(z_collection)-1]))  
-	print("arc_length"+(str)(T-1),arc_length(model, z_collection[len(z_collection)-2],z_collection[len(z_collection)-1])) 
+	#print("distance_"+(str)(T-1),linear_distance(z_collection[len(z_collection)-2],z_collection[len(z_collection)-1]))  
+	#print("arc_length"+(str)(T-1),arc_length(model, z_collection[len(z_collection)-2],z_collection[len(z_collection)-1])) 
 
 def find_jacobian(model, z1): #Jh
 	z = z1
@@ -183,9 +189,9 @@ def find_jacobian(model, z1): #Jh
 
 def find_jacobian_1(model, z1): #Jg
 	z = z1
-	print("z",z)
+	#print("z",z)
 	dec = model.decode(z)
-	print("dec",dec)
+	#print("dec",dec)
 	jacobian = torch.FloatTensor(784,20).zero_()
 	for j in range(784):
 		f = torch.FloatTensor(784).zero_()
@@ -279,11 +285,11 @@ def geodesic_length(model, z_collection):
 def main1(model,z0,zt):
 	step_size = 0.1
 	y = linear_distance(z0,zt)
-	print("distance_ends:",y)
+	#print("distance_ends:",y)
 	linear_interpolation(model,z0,zt)
-	print("geodesic_ends:",geodesic_length(model, z_collection))
+	#print("geodesic_ends:",geodesic_length(model, z_collection))
 	while (sum_energy_1(model) > epsilon):
-		print(sum_energy_1(model))
+		#print(sum_energy_1(model))
 		for i in range(1,T-1):
 			etta_i = find_etta_i(model, z_collection[i-1], z_collection[i], z_collection[i+1])
 			e1 = step_size*etta_i
@@ -304,10 +310,10 @@ train(batchsize = batch_size)
 #load_model()
 #############################################################################
 
-z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
-zt = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
+#z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
+#zt = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 
-main1(model=model,z0=z0, zt=zt)
+#main1(model=model,z0=z0, zt=zt)
 
 
 	

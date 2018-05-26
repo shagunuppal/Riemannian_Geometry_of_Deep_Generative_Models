@@ -100,17 +100,11 @@ def find_jacobian_1(model, z1): #Jg
 
 
 def find_energy(model,z0, z1, z2):
-	#print("z1",z1)
 	#find_jacobian(model, z1)
 	a11 = find_jacobian_1(model, z1)
 	a1 = torch.transpose(find_jacobian_1(model,Variable(z1.data.view(1,32), requires_grad=True)),0,1)
 	a2 = ((model.decode(Variable(z2.data.view(1,32))) - 2*model.decode(Variable(z1.data.view(1,32)))+model.decode(Variable(z0.data.view(1,32)))).data).view(64*64*3,1)
 	e = -(1 / dt)*(torch.mm(a1,a2))
-	# print(type(e))
-	# print("a11",a11)
-	# print("a1",a1)
-	# print("a2",a2)
-	# print("e",e)
 	return e
 
 def find_etta_i(model,z0,z1,z2):
@@ -118,7 +112,6 @@ def find_etta_i(model,z0,z1,z2):
 	z0 = z0.view(32)
 	z1 = z1.view(32)
 	z2 = z2.view(32)
-	#print("here")
 	a1 = find_jacobian(model,Variable(z1))
 	x1 = model.decode(Variable(z2))
 	x2 = 2*model.decode(Variable(z1))
@@ -133,7 +126,6 @@ def find_mod2(x):
 	p = 0
 	x = x.view(3*64*64).data
 	x1 = x.numpy()
-	#print("hello",x1.shape)
 	for i in range(64*64*3):
 		q = x1[i]
 		p += q*q
