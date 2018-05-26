@@ -35,7 +35,7 @@ parser.add_argument('--log-interval', type=int, default=10, metavar='N',
 
 args = parser.parse_args()
 
-num_epochs = 1
+num_epochs = 30
 batch_size = 100
 learning_rate = 0.0002
 
@@ -50,7 +50,7 @@ def to_img(x):
     return x
 
 class VAE(nn.Module):
-    def __init__():
+    def __init__(self):
         super(VAE, self).__init__()
 
         # self.nc = nc
@@ -82,22 +82,22 @@ class VAE(nn.Module):
 
         # self.up1 = nn.UpsamplingNearest2d(scale_factor=2)
         # self.pd1 = nn.ReplicationPad2d(1)
-        self.d2 = nn.Conv2d(64, 64, 3, 1)
-        self.bn6 = nn.BatchNorm2d(64, 1.e-3)
+        self.d2 = nn.ConvTranspose2d(64, 64, 4, 2, 1)
+        self.bn6 = nn.BatchNorm2d(64)
 
         # self.up2 = nn.UpsamplingNearest2d(scale_factor=2)
         # self.pd2 = nn.ReplicationPad2d(1)
-        self.d3 = nn.Conv2d(64, 32, 3, 1)
-        self.bn7 = nn.BatchNorm2d(32, 1.e-3)
+        self.d3 = nn.ConvTranspose2d(64, 32, 4, 2, 1)
+        self.bn7 = nn.BatchNorm2d(32)
 
         # self.up3 = nn.UpsamplingNearest2d(scale_factor=2)
         # self.pd3 = nn.ReplicationPad2d(1)
-        self.d4 = nn.Conv2d(32, 32, 3, 1)
-        self.bn8 = nn.BatchNorm2d(32, 1.e-3)
+        self.d4 = nn.ConvTranspose2d(32, 32, 4, 2, 1)
+        self.bn8 = nn.BatchNorm2d(32)
 
         # self.up4 = nn.UpsamplingNearest2d(scale_factor=2)
         # self.pd4 = nn.ReplicationPad2d(1)
-        self.d5 = nn.Conv2d(32, 3, 3, 1)
+        self.d5 = nn.ConvTranspose2d(32, 3, 4, 2, 1)
         #self.bn9 = nn.BatchNorm2d(3, 1.e-3)
 
         # self.up5 = nn.UpsamplingNearest2d(scale_factor=2)
@@ -110,40 +110,48 @@ class VAE(nn.Module):
 
     def encode(self, x):
         h1 = self.leakyrelu(self.bn1(self.e1(x)))
-        h2 = self.leakyrelu(self.bn2(self.e2(h1)))
-        h3 = self.leakyrelu(self.bn3(self.e3(h2)))
-        h4 = self.leakyrelu(self.bn4(self.e4(h3)))
-        #h5 = self.leakyrelu(self.bn5(self.e5(h4)))
-        h5 = h5.view(-1, 64*4*4)
+        #print("h1",h1.size())
+	h2 = self.leakyrelu(self.bn2(self.e2(h1)))
+        #print("h2",h2.size())
+	h3 = self.leakyrelu(self.bn3(self.e3(h2)))
+        #print("h3",h3.size())
+	h4 = self.leakyrelu(self.bn4(self.e4(h3)))
+        #print("h4",h4.size())
+	#h5 = self.leakyrelu(self.bn5(self.e5(h4)))
+        h5 = h4.view(-1, 64*4*4)
 
         return self.fc1(h5), self.fc2(h5)
 
     def reparametrize(self, mu, logvar):
         std = logvar.mul(0.5).exp_()
-        if args.cuda:
-            eps = torch.cuda.FloatTensor(std.size()).normal_()
-        else:
-            eps = torch.FloatTensor(std.size()).normal_()
+        #i args.cuda:
+        #    eps = torch.cuda.FloatTensor(std.size()).normal_()
+        #else:
+        eps = torch.FloatTensor(std.size()).normal_().cuda()
         eps = Variable(eps)
         return eps.mul(std).add_(mu)
 
     def decode(self, z):
-        h1 = self.relu(self.d1(z))
-        h1 = h1.view(-1, 64*4*4, 4, 4)
-        h2 = self.leakyrelu(self.bn6(self.d2((h1))))
-        h3 = self.leakyrelu(self.bn7(self.d3((h2))))
-        h4 = self.leakyrelu(self.bn8(self.d4((h3))))
+        h11 = self.relu(self.d1(z))
+        #print(h11.size())
+	h11 = h11.view(h11.size()[0], 64, 4, 4)
+	#print(h11.size())
+	h22 = self.leakyrelu(self.bn6(self.d2((h11))))
+        #print(h22.size())
+	h33 = self.leakyrelu(self.bn7(self.d3((h22))))
+        #print(h33.size())
+	h44 = self.leakyrelu(self.bn8(self.d4((h33))))
         #h5 = self.leakyrelu(self.bn9(self.d5(self.pd4(self.up4(h4)))))
+	#print(h44.size())
+        return self.sigmoid(self.d5(h44))
 
-        return self.sigmoid(self.d5(h4))
-
-    def get_latent_var(self, x):
-        mu, logvar = self.encode(x.view(-1, self.nc, self.ndf, self.ngf))
-        z = self.reparametrize(mu, logvar)
-        return z
+    #def get_latent_var(self, x):
+        #mu, logvar = self.encode(x.view(-1, self.nc, self.ndf, self.ngf))
+        #z = self.reparametrize(mu, logvar)
+        #return z
 
     def forward(self, x):
-        mu, logvar = self.encode(x.view(-1, self.nc, self.ndf, self.ngf))
+        mu, logvar = self.encode(x)
         z = self.reparametrize(mu, logvar)
         res = self.decode(z)
         return res, mu, logvar
@@ -244,10 +252,10 @@ def make_image(model,z,name):
 
 #############################################################################
 # LOADING EXISTING MODEL
-model = load_model()
+#model = load_model()
 #############################################################################
-model.eval().cuda()
-generate_image(model)
+#model.eval().cuda()
+#generate_image(model)
 #z0 = Variable(torch.FloatTensor(1,32).normal_().cuda(), requires_grad=True)
 #zt = Variable(torch.FloatTensor(1,32).normal_().cuda(), requires_grad=True)
 #model.decode(z0)
