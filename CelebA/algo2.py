@@ -9,8 +9,8 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.utils import save_image
-from torchvision import datasets
-from torchvision.datasets import MNIST
+#from torchvision import datasets
+#from torchvision.datasets import MNIST
 from torch.autograd.gradcheck import zero_gradients
 import random
 import numpy as np
@@ -91,8 +91,9 @@ def main2(model,z_collection):
 	T  = len(z_collection) - 1
 	
 	for i in range (T):
-		xi = model.decode(Variable(z_collection[i].data.cuda(),requires_grad=True))
-		x1 = find_jacobian_1(model, Variable(z_collection[i+1].data.cuda(), requires_grad=True))
+		print(z_collection[i].size())
+		xi = model.decode(Variable(z_collection[i].data.cuda().view(1,32),requires_grad=True))
+		x1 = find_jacobian_1(model, Variable(z_collection[i+1].data.cuda().view(1,32), requires_grad=True))
 		U, sigma, vh = compute_SVD(x1)
 		U = torch.FloatTensor(U.cpu()).cuda()
 		hh = torch.matmul(U, U.t())
@@ -101,29 +102,29 @@ def main2(model,z_collection):
 		#print("tensor",ui)
 		#print("here",mod(ui))
 		ui = (mod( u[len(u) - 1].view(3*64*64) ) / mod(ui)) * ui.view(3*64*64)
-		vt_ = find_jacobian(model, Variable(z_collection[i],requires_grad=True))
+		vt_ = find_jacobian(model, Variable(z_collection[i].data.cuda().view(1,32),requires_grad=True))
 		vt = torch.matmul(vt_, ui.view(3*64*64,1))
 		v.append(vt)
 		u.append(ui.view(3*64*64))
 
 	ut = u[len(u) - 1]
-	vt_ = find_jacobian(model, Variable(z_collection[len(z_collection) - 1],requires_grad=True))
+	vt_ = find_jacobian(model, Variable(z_collection[len(z_collection) - 1].data.cuda().view(1,32),requires_grad=True))
 	vt = torch.mm(vt_, ut.view(3*64*64,1))
 	for i in range(len(z_collection)):
-		make_image(model,z_collection[i].view(32), "algo2_latent"+(str)(i))	
+		make_image(model,Variable(z_collection[i].data.cuda().view(1,32)), "algo2_latent"+(str)(i))	
 	for i in range(len(v)):
-		make_image(model,v[i].view(32),"algo2_tangent"+(str)(i))
-		if(i!=0):
-			angle = find_angle(v[i-1],v[i])
-			angle = angle.data.numpy()
+		make_image(model,Variable(v[i].view(1,32)),"algo2_tangent"+(str)(i))
+		#if(i!=0):
+			#angle = find_angle(v[i-1],v[i])
+			#angle = angle.numpy()
 			#print(angle)
 	return vt
 
-z0 = Variable(torch.FloatTensor(32).normal_(), requires_grad=True)
-z1 = Variable(torch.FloatTensor(32).normal_(), requires_grad=True)
+z0 = Variable(torch.FloatTensor(1,32).normal_().cuda(), requires_grad=True)
+z1 = Variable(torch.FloatTensor(1,32).normal_().cuda(), requires_grad=True)
 
 model = load_model()
-
+model.eval().cuda()
 z_ = main1(model,z0,z1)
 main2(model,z_collection=z_)
 

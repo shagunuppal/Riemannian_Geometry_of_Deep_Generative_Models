@@ -68,7 +68,7 @@ def main3(model,z0, u0):
 	print("z0",z0.size())
 	x.append(model.decode(z0))
 
-	for i in range(0,T):
+	for i in range(0,T-1):
 		xi = model.decode(z[len(z) - 1].view(1,32)).view(3*64*64)
 		xi = x[len(x)-1]
 		ui = u[len(u) - 1]
