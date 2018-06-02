@@ -109,20 +109,20 @@ class VAE(nn.Module):
         # self.d6 = nn.Conv2d(ngf, nc, 3, 1)
 
         self.leakyrelu = nn.LeakyReLU(0.2)
-	self.relu = nn.ELU()
-	####
+        self.relu = nn.ELU()
+	    ####
         self.sigmoid = nn.Sigmoid()
 
     def encode(self, x):
         h1 = self.leakyrelu(self.bn1(self.e1(x)))
         #print("h1",h1.size())
-	h2 = self.leakyrelu(self.bn2(self.e2(h1)))
+        h2 = self.leakyrelu(self.bn2(self.e2(h1)))
         #print("h2",h2.size())
-	h3 = self.leakyrelu(self.bn3(self.e3(h2)))
+        h3 = self.leakyrelu(self.bn3(self.e3(h2)))
         #print("h3",h3.size())
-	h4 = self.leakyrelu(self.bn4(self.e4(h3)))
+        h4 = self.leakyrelu(self.bn4(self.e4(h3)))
         #print("h4",h4.size())
-	#h5 = self.leakyrelu(self.bn5(self.e5(h4)))
+	    #h5 = self.leakyrelu(self.bn5(self.e5(h4)))
         h5 = h4.view(-1, 64*4*4)
 
         return self.fc1(h5), self.fc2(h5)
@@ -138,17 +138,17 @@ class VAE(nn.Module):
 
     def decode(self, z):
         h11 = self.relu(self.d1(z))
-	####
+        ####
         #print(h11.size())
-	h11 = h11.view(h11.size()[0], 64, 4, 4)
-	#print(h11.size())
-	h22 = self.leakyrelu(self.bn6(self.d2((h11))))
+        h11 = h11.view(h11.size()[0], 64, 4, 4)
+        #print(h11.size())
+        h22 = self.leakyrelu(self.bn6(self.d2((h11))))
         #print(h22.size())
-	h33 = self.leakyrelu(self.bn7(self.d3((h22))))
+        h33 = self.leakyrelu(self.bn7(self.d3((h22))))
         #print(h33.size())
-	h44 = self.leakyrelu(self.bn8(self.d4((h33))))
+        h44 = self.leakyrelu(self.bn8(self.d4((h33))))
         #h5 = self.leakyrelu(self.bn9(self.d5(self.pd4(self.up4(h4)))))
-	#print(h44.size())
+        #print(h44.size())
         return self.sigmoid(self.d5(h44))
 
     #def get_latent_var(self, x):

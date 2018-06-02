@@ -33,7 +33,7 @@ except AttributeError:
 	torch._utils._rebuild_tensor_v2 = _rebuild_tensor_v2
 
 
-T = 10
+T = 6
 dt = 1.0 / T
 epsilon = 100
 z_collection = []
@@ -112,15 +112,14 @@ def find_energy(model,z0, z1, z2):
 	return e
 
 def find_etta_i(model,z0,z1,z2):
-	dt = 1/T
+	dt = 1.0/T
 	z0 = z0.view(32)
 	z1 = z1.view(32)
 	z2 = z2.view(32)
-	#print("here")
-	a1 = find_jacobian(model,Variable(z1.cuda()))
-	x1 = model.decode(Variable(z2.cuda()))
-	x2 = 2*model.decode(Variable(z1.cuda()))
-	x3 = model.decode(Variable(z0.cuda()))
+	a1 = find_jacobian(model,Variable(z1.view(1,32).data.cuda()))
+	x1 = model.decode(Variable(z2.view(1,32).data.cuda()))
+	x2 = 2*model.decode(Variable(z1.view(1,32).data.cuda()))
+	x3 = model.decode(Variable(z0.view(1,32).data.cuda()))
 	a21 = (x1-x2+x3).data
 	a2 = a21.view(3*64*64,1)
 	e = -(1 / dt)*torch.mm(a1,a2)
@@ -155,11 +154,11 @@ def sum_energy(model):
 	return multi
 
 def sum_energy_1(model):
-	delta_e = torch.FloatTensor(32,1).zero_().cuda()
+	delta_e = torch.FloatTensor(1,32).zero_().cuda()
 	for i in range(1,T-2):
-		#print("Energy")
+		print("Energy")
 		delta_e += find_energy(model,z_collection[i-1].view(32),z_collection[i].view(32),z_collection[i+1].view(32))
-	#print("Done Again")
+	print("Done Again")
 	return find_mod1(Variable(delta_e.cuda()))
 
 '''def make_image(model,z,name):
@@ -184,7 +183,7 @@ def geodesic_length(model, z_collection):
 	return xx
 '''
 def arc_length_approx(model, z1, z2):
-	numb = 10000
+	numb = 1000
 	z_c = []
 	z_c.append(z1)
 	length = 0
@@ -203,16 +202,27 @@ def main1(model,z0,zt):
 	step_size = 0.1
 	y = linear_distance(z0,zt)
 	linear_interpolation(model,z0,zt)
+	for s in range(T):
+		make_image(model, z=z_collection[s].view(1,32), name=str(s)+"initial")
 	print ('distance_ends: ',y)
 	print ('geodesic_ends: ',geodesic_length_approx(model, z_collection))
-	print(sum_energy_1(model))
-	while (sum_energy_1(model) > epsilon):
-	 	print(sum_energy_1(model))
+	a = sum_energy_1(model)
+	print("energy",a)
+	
+	while ( a > epsilon):
+	 	print("energy:",a)
 		for i in range(1,T-1):
 			etta_i = find_etta_i(model, z_collection[i-1], z_collection[i], z_collection[i+1])
+			print("step1")	
 			e1 = step_size*etta_i
-			z_collection[i] = z_collection[i].view(32,1)
-			z_collection[i] = z_collection[i] - e1
+			#print(e1.size())
+			#e1 = e1.vieW(1,32)
+			print("step2")
+			z_collection[i] = z_collection[i].view(1,32)
+			print("step3")
+			z_collection[i] = z_collection[i] - Variable(e1.view(1,32))
+			print("step4")
+		a = sum_energy_1(model)
 	for p in range(T):
 	 	make_image(model,z=z_collection[p].view(1,32),name=str(p))
 	return z_collection
