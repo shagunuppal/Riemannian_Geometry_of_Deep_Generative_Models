@@ -20,11 +20,15 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import sys, os
 import math
+from sklearn.manifold import TSNE
+import matplotlib.image as mpimg
+from os import path
+
 
 from distance import *
 
-configure('./logs/' + 'algo1_new')
-log_value('recon_loss', 1.0, 0)
+#configure('./logs/' + 'algo1_new')
+#log_value('recon_loss', 1.0, 0)
 
 import torch._utils
 try:
@@ -201,7 +205,7 @@ def find_jacobian_1(model, z1): #Jg
 		z.grad.data.zero_()
 	return jacobian
 
-T = 4
+T = 10
 dt = 1.0 / T
 epsilon = 2500
 z_collection = []
@@ -282,6 +286,43 @@ def geodesic_length(model, z_collection):
 		xx += find_mod1(xx1)*T
 	return xx
 
+def plot(model,batchsize):
+	test_loader = torch.utils.data.DataLoader(datasets.MNIST('./data',train=False,download=True,transform=transforms.ToTensor()),batch_size=batchsize, shuffle=True)
+	model.eval()
+	z_list = None
+	l_list = []
+	for i, (data, labels) in enumerate(test_loader):
+	    data = Variable(data)
+	    mu, logvar = model.encode(data.view(-1, 28*28))
+	    z = model.reparametrize(mu, logvar)
+	    if i == 0:
+	        z_list = z
+	        l_list = labels
+	    else:
+	        z_list = torch.cat((z_list, z), 0)
+	        l_list = torch.cat((l_list, labels), 0)
+	    if (i == 100):
+	    	break
+
+	z_list = z_list.data.numpy()[:1000]
+	l_list = l_list.numpy()[:1000] # labels are not Variable
+
+	X_reduced = TSNE(n_components=2, random_state=0).fit_transform(z_list)
+
+	print (X_reduced.shape)
+	# (N, 2)
+	colors = 'r', 'g', 'b', 'c', 'm', 'y', 'k', 'pink', 'orange', 'purple'
+	for i, c in enumerate(colors):
+	    plt.scatter(X_reduced[l_list == i, 0], X_reduced[l_list == i, 1], c=c, label=str(i))
+
+	plt.scatter(X_reduced[:, 0], X_reduced[:, 1], c=l_list)
+	plt.legend()
+	plt.show()
+	plt.savefig('./fig.png')
+
+def rgb2gray(rgb):
+    return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
+
 def main1(model,z0,zt):
 	step_size = 0.1
 	y = linear_distance(z0,zt)
@@ -295,27 +336,40 @@ def main1(model,z0,zt):
 			e1 = step_size*etta_i
 			z_collection[i] = z_collection[i].view(20,1)
 			z_collection[i] = z_collection[i] - e1
-	# for p in range(T):
-	#  	make_image(model,z=z_collection[p].view(20),name=str(p))
+	for p in range(T):
+		make_image(model,z=z_collection[p].view(20),name=str(p))
 	return z_collection
 
 #############################################################################
 # TRAINING A NEW MODEL
-train(batchsize = batch_size)
+#train(batchsize = batch_size)
 #save_model(model)
 #############################################################################
 
 #############################################################################
 # LOADING EXISTING MODEL
-#load_model()
+load_model()
 #############################################################################
 
 #z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 #zt = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 
-#main1(model=model,z0=z0, zt=zt)
+folder = path.realpath("./interpolation")
+images = os.listdir(folder)
 
+img_0_ = images[1]
+img_0 = mpimg.imread('./interpolation/' + img_0_)
+img_0 = Variable((torch.FloatTensor(rgb2gray(img_0))).view(784),requires_grad=True)
+z0,_ = model.encode(img_0)
 
+img_1_ = images[2]
+img_1 = mpimg.imread('./interpolation/' + img_1_)
+img_1 = Variable((torch.FloatTensor(rgb2gray(img_1))).view(784),requires_grad=True)
+zt,_ = model.encode(img_1)
+
+main1(model=model,z0=z0, zt=zt)
+
+#plot(model=model,batchsize=1)
 	
 
 		
