@@ -290,18 +290,18 @@ def plot(model,batchsize):
 	z_list = []
 	l_list = []
 	for i, (data, labels) in enumerate(test_loader):
-	    r = random.randint(0,data.size()[0] - 1)
-	    data = Variable(data)
-	    data = data.view(-1, 28*28)
-	    data = data[r,:]
-	    mu, logvar = model.encode(data)
-	    z = model.reparametrize(mu, logvar)
-	    z = z.data
-	    z = z.numpy()
-	    labels = labels[r]
-	    labels = labels.numpy()
-	    z_list.append(z)
-	    l_list.append(labels)
+		for j in range(20):
+		    r = random.randint(0,data.size()[0] - 1)
+		    data_ = Variable(data)
+		    data_ = data_.view(-1, 28*28)
+		    data_ = data_[r,:]
+		    z,_ = model.encode(data_)
+		    z = z.data
+		    z = z.numpy()
+		    labels_ = labels[r]
+		    labels_ = labels_.numpy()
+		    z_list.append(z)
+		    l_list.append(labels_)
 
 	z_list = np.asarray(z_list)
 	l_list = np.asarray(l_list)
@@ -343,24 +343,25 @@ def main1(model,z0,zt):
 # TRAINING A NEW MODEL
 #train(batchsize = batch_size)
 #save_model(model)
-#############################################################################
+#######################i######################################################
 
 #############################################################################
 # LOADING EXISTING MODEL
 model = load_model()
 #############################################################################
 
-#z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
-#zt = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
-
-# folder = path.realpath('./interpolation/')
-# images = os.listdir(folder)	
-# image0 = ''
 		
 plot(model=model,batchsize=batch_size)
 
+# test_loader = torch.utils.data.DataLoader(datasets.MNIST('./data',train=False,download=True,transform=transforms.ToTensor()),batch_size=batchsize, shuffle=True)
+# model.eval()
 
-
+# for i,(data,labels) in enumerate(test_loader):
+# 	r = random.randint(0,data.size()[0] - 1)
+#     data = Variable(data)
+#     data = data.view(-1, 28*28)
+#     data = data[r,:]
+#     mu, logvar = model.encode(data)
 
 
 
