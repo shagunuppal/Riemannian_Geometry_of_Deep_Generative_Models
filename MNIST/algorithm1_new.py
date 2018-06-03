@@ -25,8 +25,6 @@ import matplotlib.image as mpimg
 from os import path
 from PIL import Image
 
-
-
 from distance import *
 
 #configure('./logs/' + 'algo1_new')
@@ -267,7 +265,7 @@ def sum_energy_1(model):
 
 def make_image(model,z,name):
 	x = model.decode(Variable(z.data))
-	print("decoded",x)
+	#print("decoded",x)
 	x = x.view(28,28)
 	img = x.data.numpy()
 	plt.imshow(img, cmap = 'gray', interpolation = 'nearest')
@@ -289,23 +287,24 @@ def geodesic_length(model, z_collection):
 def plot(model,batchsize):
 	test_loader = torch.utils.data.DataLoader(datasets.MNIST('./data',train=False,download=True,transform=transforms.ToTensor()),batch_size=batchsize, shuffle=True)
 	model.eval()
-	z_list = None
+	z_list = []
 	l_list = []
 	for i, (data, labels) in enumerate(test_loader):
+	    r = random.randint(0,data.size()[0] - 1)
 	    data = Variable(data)
-	    mu, logvar = model.encode(data.view(-1, 28*28))
+	    data = data.view(-1, 28*28)
+	    data = data[r,:]
+	    mu, logvar = model.encode(data)
 	    z = model.reparametrize(mu, logvar)
-	    if i == 0:
-	        z_list = z
-	        l_list = labels
-	    else:
-	        z_list = torch.cat((z_list, z), 0)
-	        l_list = torch.cat((l_list, labels), 0)
-	    if (i == 100):
-	    	break
+	    z = z.data
+	    z = z.numpy()
+	    labels = labels[r]
+	    labels = labels.numpy()
+	    z_list.append(z)
+	    l_list.append(labels)
 
-	z_list = z_list.data.numpy()[:1000]
-	l_list = l_list.numpy()[:1000] # labels are not Variable
+	z_list = np.asarray(z_list)
+	l_list = np.asarray(l_list)
 
 	X_reduced = TSNE(n_components=2, random_state=0).fit_transform(z_list)
 
@@ -354,33 +353,11 @@ model = load_model()
 #z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 #zt = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 
-#img_0_ = path.realpath("./interpolation/0.jpg")
-
-img = Image.open("./interpolation/0.jpg").convert('L')
-#img = Image.open('eggs.png').convert('L')  # convert image to 8-bit grayscale
-WIDTH, HEIGHT = img.size
-
-data = list(img.getdata()) # convert image data to a list of integers
-data = [data[offset:offset+WIDTH] for offset in range(0, WIDTH*HEIGHT, WIDTH)]
-data = np.asarray(data)
-img_0 = Variable((torch.FloatTensor(data)).view(1,784),requires_grad=True)
-z0,_ = model.encode(img_0)
-
-
-img_1_ = path.realpath("./interpolation/1.jpg")
-img_1 = mpimg.imread(img_1_)
-img_1 = Variable((torch.FloatTensor(rgb2gray(img_1))).view(1,784),requires_grad=True)
-zt,_ = model.encode(img_1)
-
-make_image(model,z=z0.view(20),name=str(0))
-make_image(model,z=zt.view(20),name=str(1))
-#main1(model=model,z0=z0, zt=zt)
-
-#plot(model=model,batchsize=1)
-	
-
+# folder = path.realpath('./interpolation/')
+# images = os.listdir(folder)	
+# image0 = ''
 		
-
+plot(model=model,batchsize=batch_size)
 
 
 
