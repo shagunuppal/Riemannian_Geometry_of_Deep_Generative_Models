@@ -23,6 +23,8 @@ import math
 from sklearn.manifold import TSNE
 import matplotlib.image as mpimg
 from os import path
+from PIL import Image
+
 
 
 from distance import *
@@ -193,9 +195,7 @@ def find_jacobian(model, z1): #Jh
 
 def find_jacobian_1(model, z1): #Jg
 	z = z1
-	#print("z",z)
 	dec = model.decode(z)
-	#print("dec",dec)
 	jacobian = torch.FloatTensor(784,20).zero_()
 	for j in range(784):
 		f = torch.FloatTensor(784).zero_()
@@ -207,14 +207,14 @@ def find_jacobian_1(model, z1): #Jg
 
 T = 10
 dt = 1.0 / T
-epsilon = 2500
+epsilon = 25
 z_collection = []
 delta_e = torch.FloatTensor(20,784).zero_()
 
 def find_energy(model,z0, z1, z2):
 	a11 = find_jacobian_1(model,Variable(z1.data, requires_grad=True))
-	a1 = torch.transpose(find_jacobian_1(model,Variable(z1, requires_grad=True)),0,1)
-	a2 = ((model.decode(Variable(z2)) - 2*model.decode(Variable(z1))+model.decode(Variable(z0))).data).view(784,1)
+	a1 = torch.transpose(find_jacobian_1(model,Variable(z1.data, requires_grad=True)),0,1)
+	a2 = ((model.decode(Variable(z2.data)) - 2*model.decode(Variable(z1.data))+model.decode(Variable(z0.data))).data).view(784,1)
 	e = -(1 / dt)*(torch.mm(a1,a2))
 	return e
 
@@ -235,7 +235,7 @@ def find_etta_i(model,z0,z1,z2):
 def find_mod(x):
 	# x is float tensor
 	p = 0
-	x = x.data
+	x = x.view(20)
 	x1 = x.numpy()
 	for i in range(20):
 		q = x1[i]
@@ -245,7 +245,7 @@ def find_mod(x):
 def find_mod1(x):
 	# x is float tensor
 	p = 0
-	x = x.data
+	x = x.data.view(784)
 	x1 = x.numpy()
 	for i in range(784):
 		q = x1[i]
@@ -266,8 +266,8 @@ def sum_energy_1(model):
 	return find_mod(delta_e)
 
 def make_image(model,z,name):
-	x = model.decode(Variable(z))
-	#print("decoded",x)
+	x = model.decode(Variable(z.data))
+	print("decoded",x)
 	x = x.view(28,28)
 	img = x.data.numpy()
 	plt.imshow(img, cmap = 'gray', interpolation = 'nearest')
@@ -326,11 +326,11 @@ def rgb2gray(rgb):
 def main1(model,z0,zt):
 	step_size = 0.1
 	y = linear_distance(z0,zt)
-	#print("distance_ends:",y)
+	print("distance_ends:",y)
 	linear_interpolation(model,z0,zt)
-	#print("geodesic_ends:",geodesic_length(model, z_collection))
+	print("geodesic_ends:",geodesic_length(model, z_collection))
 	while (sum_energy_1(model) > epsilon):
-		#print(sum_energy_1(model))
+		print(sum_energy_1(model))
 		for i in range(1,T-1):
 			etta_i = find_etta_i(model, z_collection[i-1], z_collection[i], z_collection[i+1])
 			e1 = step_size*etta_i
@@ -348,26 +348,33 @@ def main1(model,z0,zt):
 
 #############################################################################
 # LOADING EXISTING MODEL
-load_model()
+model = load_model()
 #############################################################################
 
 #z0 = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 #zt = Variable(torch.FloatTensor(20).normal_(), requires_grad=True)
 
-folder = path.realpath("./interpolation")
-images = os.listdir(folder)
+#img_0_ = path.realpath("./interpolation/0.jpg")
 
-img_0_ = images[1]
-img_0 = mpimg.imread('./interpolation/' + img_0_)
-img_0 = Variable((torch.FloatTensor(rgb2gray(img_0))).view(784),requires_grad=True)
+img = Image.open("./interpolation/0.jpg").convert('L')
+#img = Image.open('eggs.png').convert('L')  # convert image to 8-bit grayscale
+WIDTH, HEIGHT = img.size
+
+data = list(img.getdata()) # convert image data to a list of integers
+data = [data[offset:offset+WIDTH] for offset in range(0, WIDTH*HEIGHT, WIDTH)]
+data = np.asarray(data)
+img_0 = Variable((torch.FloatTensor(data)).view(1,784),requires_grad=True)
 z0,_ = model.encode(img_0)
 
-img_1_ = images[2]
-img_1 = mpimg.imread('./interpolation/' + img_1_)
-img_1 = Variable((torch.FloatTensor(rgb2gray(img_1))).view(784),requires_grad=True)
+
+img_1_ = path.realpath("./interpolation/1.jpg")
+img_1 = mpimg.imread(img_1_)
+img_1 = Variable((torch.FloatTensor(rgb2gray(img_1))).view(1,784),requires_grad=True)
 zt,_ = model.encode(img_1)
 
-main1(model=model,z0=z0, zt=zt)
+make_image(model,z=z0.view(20),name=str(0))
+make_image(model,z=zt.view(20),name=str(1))
+#main1(model=model,z0=z0, zt=zt)
 
 #plot(model=model,batchsize=1)
 	
