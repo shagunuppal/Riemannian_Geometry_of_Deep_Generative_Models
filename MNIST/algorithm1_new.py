@@ -205,7 +205,7 @@ def find_jacobian_1(model, z1): #Jg
 
 T = 10
 dt = 1.0 / T
-epsilon = 25
+epsilon = 5000
 z_collection = []
 delta_e = torch.FloatTensor(20,784).zero_()
 
@@ -324,10 +324,12 @@ def rgb2gray(rgb):
 
 def main1(model,z0,zt):
 	step_size = 0.1
-	y = linear_distance(z0,zt)
-	print("distance_ends:",y)
+	#y = linear_distance(z0,zt)
+	#print("distance_ends:",y)
 	linear_interpolation(model,z0,zt)
-	print("geodesic_ends:",geodesic_length(model, z_collection))
+	#print("geodesic_ends:",geodesic_length(model, z_collection))
+	for p in range(T):
+		make_image(model,z=z_collection[p].view(20),name='initial_' + str(p))
 	while (sum_energy_1(model) > epsilon):
 		print(sum_energy_1(model))
 		for i in range(1,T-1):
@@ -350,20 +352,34 @@ def main1(model,z0,zt):
 model = load_model()
 #############################################################################
 
-		
-plot(model=model,batchsize=batch_size)
+#plot(model=model,batchsize=batch_size)
 
-# test_loader = torch.utils.data.DataLoader(datasets.MNIST('./data',train=False,download=True,transform=transforms.ToTensor()),batch_size=batchsize, shuffle=True)
-# model.eval()
+test_loader = torch.utils.data.DataLoader(datasets.MNIST('./data',train=False,download=True,transform=transforms.ToTensor()),batch_size=batch_size, shuffle=True)
+model.eval()
 
-# for i,(data,labels) in enumerate(test_loader):
-# 	r = random.randint(0,data.size()[0] - 1)
-#     data = Variable(data)
-#     data = data.view(-1, 28*28)
-#     data = data[r,:]
-#     mu, logvar = model.encode(data)
+for i,(data,labels) in enumerate(test_loader):
+	r = random.randint(0,data.size()[0] - 1)
+	data = Variable(data)
+	data = data.view(-1, 28*28)
+	data = data[r,:]
+	z,_ = model.encode(data)
+	label = labels[r]
+	if (label == 0):
+		z0 = z
+		break
 
+for i,(data,labels) in enumerate(test_loader):
+	r = random.randint(0,data.size()[0] - 1)
+	data = Variable(data)
+	data = data.view(-1, 28*28)
+	data = data[r,:]
+	z,_ = model.encode(data)
+	label = labels[r]
+	if (label == 1):
+		zt = z
+		break
 
+main1(model,z0,zt)
 
 
 
