@@ -203,7 +203,7 @@ def find_jacobian_1(model, z1): #Jg
 		z.grad.data.zero_()
 	return jacobian
 
-T = 10
+T = 8
 dt = 1.0 / T
 epsilon = 5000
 z_collection = []
