@@ -306,7 +306,7 @@ def plot(model,batchsize):
 	z_list = np.asarray(z_list)
 	l_list = np.asarray(l_list)
 
-	X_reduced = TSNE(n_components=2, random_state=0).fit_transform(z_list)
+	X_reduced = TSNE(n_components=2, random_state=0, verbose=1, perplexity=30.0).fit_transform(z_list)
 
 	print (X_reduced.shape)
 	# (N, 2)
@@ -315,9 +315,43 @@ def plot(model,batchsize):
 	    plt.scatter(X_reduced[l_list == i, 0], X_reduced[l_list == i, 1], c=c, label=str(i))
 
 	plt.scatter(X_reduced[:, 0], X_reduced[:, 1], c=l_list)
-	plt.legend()
+	#plt.legend()
 	plt.show()
 	plt.savefig('./fig.png')
+
+def tsne(model,batchsize):
+	test_loader = torch.utils.data.DataLoader(datasets.MNIST('./data',train=False,download=True,transform=transforms.ToTensor()),batch_size=batchsize, shuffle=True)
+	for i,(data,labels) in enumerate(test_loader):
+		data = data.view(-1,28*28)
+		mu, sigma = model.encode(Variable(data))
+		z = model.reparametrize(mu,sigma)
+		vis_data = TSNE(n_components=2,verbose=1,perplexity=30.0,n_iter=1000).fit_transform(z.data.numpy())
+		#print (vis_data)
+		vis_x = vis_data[:,0]
+		vis_y = vis_data[:,1]
+		fig,ax = plt.subplots(1)
+		ax.set_yticklabels([])
+		ax.set_xticklabels([])
+		plt.scatter(vis_x,vis_y,marker='.',c=labels.numpy(),cmap=plt.cm.get_cmap("jet",20))
+		plt.axis('off')
+		plt.colorbar(ticks=range(20))
+		plt.clim(-0.5,20.5)
+		plt.savefig('tsne_results_variations.png')
+		break
+
+		# vis_data = TSNE(n_components=2,verbose=1,perplexity=100.0,n_iter=1000).fit_transform(z.data.numpy())
+		# #print (vis_data)
+		# vis_x = vis_data[:,0]
+		# vis_y = vis_data[:,1]
+		# fig,ax = plt.subplots(1)
+		# ax.set_yticklabels([])
+		# ax.set_xticklabels([])
+		# plt.scatter(vis_x,vis_y,marker='.',c=labels.numpy(),cmap=plt.cm.get_cmap("jet",20))
+		# plt.axis('off')
+		# plt.colorbar(ticks=range(20))
+		# plt.clim(-0.5,20.5)
+		# plt.savefig('tsne_results_class.png')
+		
 
 def rgb2gray(rgb):
     return np.dot(rgb[...,:3], [0.299, 0.587, 0.114])
@@ -350,36 +384,38 @@ def main1(model,z0,zt):
 #############################################################################
 # LOADING EXISTING MODEL
 model = load_model()
+model.eval()
 #############################################################################
 
-#plot(model=model,batchsize=batch_size)
+plot(model=model,batchsize=batch_size)
+#tsne(model=model,batchsize=batch_size)
 
-test_loader = torch.utils.data.DataLoader(datasets.MNIST('./data',train=False,download=True,transform=transforms.ToTensor()),batch_size=batch_size, shuffle=True)
-model.eval()
+# test_loader = torch.utils.data.DataLoader(datasets.MNIST('./data',train=False,download=True,transform=transforms.ToTensor()),batch_size=batch_size, shuffle=True)
+# model.eval()
 
-for i,(data,labels) in enumerate(test_loader):
-	r = random.randint(0,data.size()[0] - 1)
-	data = Variable(data)
-	data = data.view(-1, 28*28)
-	data = data[r,:]
-	z,_ = model.encode(data)
-	label = labels[r]
-	if (label == 0):
-		z0 = z
-		break
+# for i,(data,labels) in enumerate(test_loader):
+# 	r = random.randint(0,data.size()[0] - 1)
+# 	data = Variable(data)
+# 	data = data.view(-1, 28*28)
+# 	data = data[r,:]
+# 	z,_ = model.encode(data)
+# 	label = labels[r]
+# 	if (label == 0):
+# 		z0 = z
+# 		break
 
-for i,(data,labels) in enumerate(test_loader):
-	r = random.randint(0,data.size()[0] - 1)
-	data = Variable(data)
-	data = data.view(-1, 28*28)
-	data = data[r,:]
-	z,_ = model.encode(data)
-	label = labels[r]
-	if (label == 1):
-		zt = z
-		break
+# for i,(data,labels) in enumerate(test_loader):
+# 	r = random.randint(0,data.size()[0] - 1)
+# 	data = Variable(data)
+# 	data = data.view(-1, 28*28)
+# 	data = data[r,:]
+# 	z,_ = model.encode(data)
+# 	label = labels[r]
+# 	if (label == 1):
+# 		zt = z
+# 		break
 
-main1(model,z0,zt)
+# main1(model,z0,zt)
 
 
 
