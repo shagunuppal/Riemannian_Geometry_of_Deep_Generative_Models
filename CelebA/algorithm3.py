@@ -70,7 +70,6 @@ def main3(model,z0, u0):
 
 	for i in range(0,T-1):
 		xi = model.decode(z[len(z) - 1].view(1,32)).view(3*64*64)
-		xi = x[len(x)-1]
 		ui = u[len(u) - 1]
 		xiplus1 = Variable(torch.add(xi.data, (dt * ui).cuda()).cuda(). view(3*64*64), requires_grad=True)
 		xiplus1 = xiplus1.view(1,3,64,64)
@@ -93,8 +92,20 @@ def main3(model,z0, u0):
 
 model = load_model()
 model.eval().cuda()
-z0 = Variable(torch.FloatTensor(1,32).normal_().cuda(), requires_grad=True)
-z1 = Variable(torch.FloatTensor(1,32).normal_().cuda(), requires_grad=True)
+
+#z0 = Variable(torch.FloatTensor(1,32).normal_().cuda(), requires_grad=True)
+#z1 = Variable(torch.FloatTensor(1,32).normal_().cuda(), requires_grad=True)
+z0 = torch.zeros(1,32)
+z1 = torch.zeros(1,32)
+data_dir = './test_set_CelebA/' # this path depends on your computer
+dset = datasets.ImageFolder(data_dir, transform=transforms.ToTensor())
+train_set = torch.utils.data.DataLoader(dset, batch_size=2, shuffle=True)
+for batch_idx, (img, labels) in enumerate(train_set):
+	z0 = img[0,:,:]
+	z1 = img[1,:,:]
+	z0 = Variable(z0, requires_grad=True)
+	z1 = Variable(z1, requires_grad=True)    
+
 z_ = main1(model,z0,z1)
 u0 = initial_velocity(model,z_)
 

@@ -387,7 +387,7 @@ model = load_model()
 model.eval()
 #############################################################################
 
-plot(model=model,batchsize=batch_size)
+#plot(model=model,batchsize=batch_size)
 #tsne(model=model,batchsize=batch_size)
 
 # test_loader = torch.utils.data.DataLoader(datasets.MNIST('./data',train=False,download=True,transform=transforms.ToTensor()),batch_size=batch_size, shuffle=True)
