@@ -46,8 +46,8 @@ class VAE(nn.Module):
 
 	def decode(self, z):
 		# g
-		h33 = F.elu(self.fc3(z)) #20-200
-		h3 = F.elu(self.fc33(h33)) #200-450
+		h33 = F.relu(self.fc3(z)) #20-200
+		h3 = F.relu(self.fc33(h33)) #200-450
 		return F.sigmoid(self.fc4(h3)) #450-784
 
 	def get_latent_variable(self, mu, logvar):
@@ -66,11 +66,9 @@ class VAE(nn.Module):
 
 model = VAE(784,450,200,20)
 
-
 def load_model():
 	model.load_state_dict(torch.load('./vae2.pth'))
 	return model
-
 
 model = load_model()
 model.eval()
@@ -78,11 +76,12 @@ model.eval()
 batch_size = 64
 x = Variable(torch.FloatTensor(784).normal_(), requires_grad=True)
 
-torch_out = torch.onnx._export(model,             # model being run
-                               x,                       # model input (or a tuple for multiple inputs)
-                               "model_mnsit.onnx", # where to save the model (can be a file or file-like object)
-                               export_params=True)      # store the trained parameter weights inside the model file
+# torch_out = torch.onnx._export(model,             # model being run
+#                                x,                       # model input (or a tuple for multiple inputs)
+#                                "model_mnsit.onnx", # where to save the model (can be a file or file-like object)
+#                                export_params=True)      # store the trained parameter weights inside the model file
 
+torch.onnx.export(model, x, "MNIST.onnx")
 
 
 
