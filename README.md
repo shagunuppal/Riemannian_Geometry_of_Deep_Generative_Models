@@ -19,3 +19,6 @@ This repository represents a basic implementation of the paper <a href="https://
 ## Results
 
 <img src='img1.jpg'>
+<img src='img2.jpg'>
+<img src='img3.jpg'>
+<img src='img4.jpg'>
