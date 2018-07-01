@@ -6,6 +6,7 @@
 3) Tensorboard
 4) Tensorflow
 5) Cmake
+6) ONNX
 
 ## Steps to install ONNX
 - git clone https://github.com/onnx/onnx.git
