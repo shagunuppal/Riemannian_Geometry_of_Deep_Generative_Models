@@ -1,5 +1,7 @@
 # Riemannian Geometry of Deep Generative Models
 
+This repository represents a basic implementation of the paper <a href="https://arxiv.org/abs/1711.08014">Riemannian Geometry of Deep Generative Models</a>, along with the results on MNIST as well as CelebA.
+
 ## Requirements 
 1) Python 2/3
 2) Pytorch
@@ -13,8 +15,6 @@
 - cd onnx
 - git submodule update --init
 - python setup.py install
-
-This repository represents a basic implementation of the paper <a href="https://arxiv.org/abs/1711.08014">Riemannian Geometry of Deep Generative Models</a>, along with the results on MNIST as well as CelebA.
 
 ## Results
 
