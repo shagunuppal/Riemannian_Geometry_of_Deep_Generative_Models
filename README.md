@@ -26,5 +26,3 @@ This repository represents a basic implementation of the paper <a href="https://
 <img src='img3.jpg'>
 <img src='img4.jpg'>
 
-
-This work was done by Sarthak Bhagat and Shagun in their B.Tech Thesis under Prof. Saket Anand.
