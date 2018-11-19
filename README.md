@@ -1,6 +1,6 @@
 # Riemannian Geometry of Deep Generative Models
 
-This work was done by Sarthak Bhagat and Shagun in their B.Tech Thesis under Prof. Saket Anand.
+This work was done by Sarthak Bhagat and Shagun Uppal in their B.Tech Thesis under Prof. Saket Anand.
 <br>
 <br>
 This repository represents a basic implementation of the paper <a href="https://arxiv.org/abs/1711.08014">Riemannian Geometry of Deep Generative Models</a>, along with the results on MNIST as well as CelebA.
