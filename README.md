@@ -3,7 +3,8 @@
 This work was done by Sarthak Bhagat and Shagun Uppal in their B.Tech Thesis under Prof. Saket Anand.
 <br>
 <br>
-This repository represents a basic implementation of the paper <a href="https://arxiv.org/abs/1711.08014">Riemannian Geometry of Deep Generative Models</a>, along with the results on MNIST as well as CelebA.
+This repository provides partial implementation of our paper <a href="https://arxiv.org/abs/1902.06964">Geometry of Deep Generative Models for Disentangled Representations</a>.
+This repository also provides a basic implementation of the paper <a href="https://arxiv.org/abs/1711.08014">Riemannian Geometry of Deep Generative Models</a> on MNIST as well as CelebA.
 <br>
 <br>
 If you find this code useful in your research, don't forget to cite:
