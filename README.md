@@ -1,6 +1,6 @@
 # Riemannian Geometry of Deep Generative Models
 
-This work was done by Sarthak Bhagat and Shagun Uppal in their B.Tech Thesis under Prof. Saket Anand.
+This work was done by Sarthak Bhagat and Shagun Uppal in their B.Tech Thesis under Prof. Dr. Saket Anand.
 <br>
 <br>
 This repository provides partial implementation of our paper <a href="https://arxiv.org/abs/1902.06964">Geometry of Deep Generative Models for Disentangled Representations</a>.
